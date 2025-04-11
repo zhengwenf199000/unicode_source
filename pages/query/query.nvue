@@ -1,0 +1,159 @@
+<template>
+	<view class="content query_content" @click="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c">
+			<text class="query_content-title">信息查询</text>
+			<text class="query_content-type">请选择业务类型</text>
+			<view class="query_content-funcs">
+				<view class="query_content-funcs-fs" :class="{ 'query_content-funcs-first': i === 0 }"
+					v-for="(item, i) in funcItems" :key="i">
+					<image class="query_content-funcs-f" v-for="(fun, j) in item" :key="fun.path" :src="fun.icon" mode="widthFix"
+						@click="funcItemClick(fun)"></image>
+				</view>
+			</view>
+
+			<button type="primary" class="query_content-logout" @click="exitClick">退出</button>
+		</view>
+	</view>
+</template>
+
+<script>
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				funcItems: [
+					[{
+						path: '/pages/query/file',
+						icon: '../../static/query/PersonalFiles.png'
+					}],
+					[
+						
+						{
+							path: '/pages/query/common?type=sign',
+							icon: '../../static/query/SignInRecord.png'
+						},
+						{
+							path: '/pages/query/common?type=leave',
+							icon: '../../static/query/OutOfOfficeRecords.png'
+						}
+					],
+					[
+						{
+							path: '/pages/query/common?type=warning',
+							icon: '../../static/query/WarningRecord.png'
+						},
+						{
+							path: '/pages/query/common?type=study',
+							icon: '../../static/query/LearningRecord.png'
+						},
+					],
+					[
+						{
+							path: '/pages/query/common?type=advise',
+							icon: '../../static/query/AdmonishmentRecord.png'
+						},
+						{
+							path: '/pages/query/common?type=evaluating',
+							icon: '../../static/query/PrintEvaluationReport.png'
+						}
+					]
+				]
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+		},
+		onShow() {
+			
+		},
+		methods: {
+			funcItemClick(func) {
+				if (!func.path) {
+					uni.showToast({
+						title: '系统升级中...',
+						icon: 'none'
+					})
+					return
+				}
+				if (!this.idnum) {
+					uni.showToast({
+						title: '未获取到您的身份信息',
+						icon: 'none'
+					})
+					return
+				}
+				uni.navigateTo({
+					url: func.path + (func.path.search(/\?/) > -1 ? '&' : '?') + 'idnum=' + this.idnum,
+					animationType: 'none'
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			exitClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.query_content {
+
+		.query_content-title {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+
+		.query_content-type {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			text-align: center;
+			margin-top: 10px;
+		}
+
+		.query_content-funcs {
+			flex: 1;
+			flex-direction: row;
+			align-items: center;
+
+			.query_content-funcs-fs {
+				flex: 1;
+
+				.query_content-funcs-f {
+					/* #ifndef APP-NVUE */
+					width: 100%;
+					/* #endif */
+				}
+			}
+
+			.query_content-funcs-first {
+				flex: 1.06;
+			}
+
+			.query_content-funcs-p {
+				width: 30px;
+			}
+		}
+
+		.query_content-logout {
+			align-self: flex-end;
+			background-color: $theme-dark-color;
+			margin-bottom: 15px;
+			color: #fff;
+			width: 100px;
+		}
+	}
+</style>

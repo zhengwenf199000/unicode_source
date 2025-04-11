@@ -1,0 +1,124 @@
+<template>
+	<view class="content leave_content" @click="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c">
+			<text class="leave_content-title">请销假</text>
+			<text class="leave_content-type">请选择业务类型</text>
+			<view class="leave_content-funcsc">
+				<view class="leave_content-funcs">
+					<image class="leave_content-funcs-f" :class="{ 'leave_content-funcs-first': i === 0 }"
+						v-for="(func, i) in funcItems" :key="i" :src="func.icon" mode="heightFix" @click="funcClick(func)">
+					</image>
+					<!-- <image class="leave_content-funcs-f" src="@/static/leave/PhysicalSignCollection.png" mode="heightFix"></image> -->
+				</view>
+			</view>
+
+			<button type="primary" class="leave_content-logout" @click="exitClick">退出</button>
+		</view>
+	</view>
+</template>
+
+<script>
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				funcItems: [{
+						path: '/pages/leave/list',
+						icon: '../../static/leave/GoingOut.png'
+					},
+					{
+						path: '/pages/leave/destroy',
+						icon: '../../static/leave/ResumptionFromLeave.png'
+					}
+				]
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+		},
+		methods: {
+			funcClick(func) {
+				if (!this.idnum) {
+					uni.showToast({
+						title: '未获取到您的身份信息',
+						icon: 'none'
+					})
+					return
+				}
+				uni.navigateTo({
+					url: func.path + '?idnum=' + this.idnum,
+					animationType: 'none'
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			exitClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.leave_content {
+
+		.leave_content-title {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+
+		.leave_content-type {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			text-align: center;
+			margin-top: 10px;
+		}
+
+		.leave_content-funcsc {
+			flex: 1;
+			justify-content: center;
+		}
+
+		.leave_content-funcs {
+			flex-direction: row;
+			justify-content: center;
+			height: 160px;
+
+			.leave_content-funcs-f {
+				/* #ifndef APP-NVUE */
+				height: 100%;
+				/* #endif */
+				margin-left: 30px;
+			}
+
+			.leave_content-funcs-first {
+				margin-left: 0;
+			}
+
+			.leave_content-funcs-p {
+				width: 30px;
+			}
+		}
+
+		.leave_content-logout {
+			align-self: flex-end;
+			background-color: $theme-dark-color;
+			margin-bottom: 15px;
+			color: #fff;
+			width: 100px;
+		}
+	}
+</style>

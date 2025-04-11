@@ -1,0 +1,124 @@
+<template>
+	<view class="content" @click="capture" @touchmove="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c list_content">
+			<breadcrumb title="请销假" actionTitle="外出申请"></breadcrumb>
+			<action-table :tableMapper="tableMapper" :tableData="activitys" @viewBtnClick="viewBtnClick"></action-table>
+			
+			<view class="list_content-backbtns">
+				<button v-if="!onlyView" class="list_content-btn" type="primary" @click="addLeave">新增</button>
+				<view v-else></view>
+				<button type="primary" class="list_content-btn" @click="backClick">返回</button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		requestApi,
+		apis
+	} from '@/utils/http'
+	import { leaveTableMapper, leaveDetailMapper } from '@/utils/tableMappers'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				idnum: '',
+				tableMapper: leaveTableMapper,
+				activitys: []
+				// activitys: Array.from(new Array(20)).map((v, i) => ({
+				// 	"deptName": "社区矫正平台", //矫正对象所在机构
+				// 	"id": 9201 + i,          //事件编号
+				// 	"time": "2021-08-10 ~ 2021-09-10", //请假时间
+				// 	"status": "请假",   //类别
+				// 	"overTime": "",    //销假时间
+				// 	"address": "新抚区", //外出目的地
+				// 	"applyTime": "2021-08-13",  //申请时间
+				// 	"processInfo": "需要司法所管理岗审批"  //流程状态
+				// }))
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+		},
+		onShow() {
+			this.getActivitys()	
+		},
+		methods: {
+			getActivitys() {
+				uni.showLoading()
+				requestApi(apis.getLeaveList, {
+					id_num: this.idnum
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.activitys = data
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			viewBtnClick(index) {
+				const act = this.activitys[index]
+				console.log(act);
+				this.$store.commit('setDetailData', {
+					name: '外出详情',
+					data: act,
+					detailMapper: leaveDetailMapper
+				})
+				uni.navigateTo({
+					url: '/pages/leave/detail?leaveId=' + act.id + '&status=' + act.processInfo,
+					animationType: 'none'
+				})
+			},
+			addLeave() {
+				uni.navigateTo({
+					// url: '/pages/leave/add?idnum=' + this.idnum,
+					url: '/pages/blank/blank?idnum=' + this.idnum + '&target=/pages/leave/add',
+					animationType: 'none'
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			backClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.list_content {
+		
+		.list_content-backbtns {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			
+			& .list_content-btn {
+				width: 100px;
+				background-color: $theme-dark-color;
+				margin-bottom: 10px;
+			}
+		}
+		
+	}
+</style>

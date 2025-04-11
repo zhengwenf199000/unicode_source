@@ -1,0 +1,32 @@
+"use weex:vue";
+
+if (typeof Promise !== 'undefined' && !Promise.prototype.finally) {
+  Promise.prototype.finally = function(callback) {
+    const promise = this.constructor
+    return this.then(
+      value => promise.resolve(callback()).then(() => value),
+      reason => promise.resolve(callback()).then(() => {
+        throw reason
+      })
+    )
+  }
+};
+
+if (typeof uni !== 'undefined' && uni && uni.requireGlobal) {
+  const global = uni.requireGlobal()
+  ArrayBuffer = global.ArrayBuffer
+  Int8Array = global.Int8Array
+  Uint8Array = global.Uint8Array
+  Uint8ClampedArray = global.Uint8ClampedArray
+  Int16Array = global.Int16Array
+  Uint16Array = global.Uint16Array
+  Int32Array = global.Int32Array
+  Uint32Array = global.Uint32Array
+  Float32Array = global.Float32Array
+  Float64Array = global.Float64Array
+  BigInt64Array = global.BigInt64Array
+  BigUint64Array = global.BigUint64Array
+};
+
+
+(()=>{var b=Object.create;var f=Object.defineProperty;var C=Object.getOwnPropertyDescriptor;var k=Object.getOwnPropertyNames;var T=Object.getPrototypeOf,S=Object.prototype.hasOwnProperty;var F=(e,n)=>()=>(n||e((n={exports:{}}).exports,n),n.exports);var I=(e,n,c,s)=>{if(n&&typeof n=="object"||typeof n=="function")for(let i of k(n))!S.call(e,i)&&i!==c&&f(e,i,{get:()=>n[i],enumerable:!(s=C(n,i))||s.enumerable});return e};var m=(e,n,c)=>(c=e!=null?b(T(e)):{},I(n||!e||!e.__esModule?f(c,"default",{value:e,enumerable:!0}):c,e));var l=F((W,g)=>{g.exports=Vue});var o=m(l());var _=(e,n)=>{let c=e.__vccOpts||e;for(let[s,i]of n)c[s]=i;return c};var N="/static/home/HomePage.png",E="/static/imgs/logo.png",A={"content-bg__countdown":{"":{position:"absolute",right:150,color:"#FFFFFF",fontSize:15}}},P={name:"content-bg",data(){return{}},computed:{systemName(){return this.$store.getters.systemName},leftTime(){return this.userInactivePage.leftTime},isCountdown(){return this.userInactivePage.isCountdown}},inject:{userInactivePage:{from:"userInactivePage",default(){return{}}}},methods:{}};function V(e,n,c,s,i,a){return(0,o.openBlock)(),(0,o.createElementBlock)("view",{class:"content-bg",renderWhole:!0},[(0,o.createElementVNode)("view",{class:"content-bg"},[(0,o.createElementVNode)("u-image",{class:"content-bg_image",src:N,mode:"widthFix"}),(0,o.createElementVNode)("view",{class:"content-bg_title"},[(0,o.createElementVNode)("view",{class:"content-bg_title__placeholder"},[(0,o.createElementVNode)("u-image",{class:"content-bg_title__placeholder___logo",src:E,mode:"widthFix"})]),(0,o.createElementVNode)("u-text",{class:"content-bg_title__text",style:{"font-size":"60px"}},(0,o.toDisplayString)(a.systemName)+"\u793E\u533A\u77EB\u6B63\u81EA\u52A9\u7EC8\u7AEF",1),a.isCountdown?((0,o.openBlock)(),(0,o.createElementBlock)("u-text",{key:0,class:"content-bg__countdown"},(0,o.toDisplayString)(a.leftTime)+"\u79D2\u540E\u5173\u95ED",1)):(0,o.createCommentVNode)("",!0)]),(0,o.createElementVNode)("view",{class:"content-bg_placeholder"})]),(0,o.renderSlot)(e.$slots,"default")])}var y=_(P,[["render",V],["styles",[A]]]);var t=m(l());var H=m(l());function v(e,n){return typeof e=="string"?n:e}var d="/static/imgs/Home.png";var B={"activity_content-title":{".activity_content ":{color:"#006AEC",fontSize:26,fontWeight:"bold",marginTop:20}},"activity_content-type":{".activity_content ":{color:"#006AEC",fontSize:26,fontWeight:"bold",textAlign:"center",marginTop:10}},"activity_content-funcsc":{".activity_content ":{flex:1,justifyContent:"center"}},"activity_content-funcs":{".activity_content ":{flexDirection:"row",justifyContent:"center",height:160}},"activity_content-funcs-f":{".activity_content .activity_content-funcs ":{marginLeft:30}},"activity_content-funcs-first":{".activity_content .activity_content-funcs ":{marginLeft:0}},"activity_content-funcs-p":{".activity_content .activity_content-funcs ":{width:30}},"activity_content-logout":{".activity_content ":{alignSelf:"flex-end",backgroundColor:"#006AEC",marginBottom:15,color:"#ffffff",width:100}}},L={data(){return{funcItems:[{path:"",icon:"../../static/activity/SignIn.png"},{path:"",icon:"../../static/activity/SignOut.png"}]}},onLoad(e){this.idnum=e.idnum},methods:{homeClick(){uni.reLaunch({url:"/pages/home/home"})},funcItemClick(e){if(!e.path){uni.showToast({title:"\u7CFB\u7EDF\u5347\u7EA7\u4E2D...",icon:"none"});return}if(!this.idnum){uni.showToast({title:"\u672A\u83B7\u53D6\u5230\u60A8\u7684\u8EAB\u4EFD\u4FE1\u606F",icon:"none"});return}uni.navigateTo({url:e.path+"?idnum="+this.idnum,animationType:"none"})},exitClick(){uni.navigateBack()}}};function z(e,n,c,s,i,a){let h=v((0,t.resolveDynamicComponent)("content-bg"),y),w=(0,t.resolveComponent)("button");return(0,t.openBlock)(),(0,t.createElementBlock)("scroll-view",{scrollY:!0,showScrollbar:!0,enableBackToTop:!0,bubble:"true",style:{flexDirection:"column"}},[(0,t.createElementVNode)("view",{class:"content activity_content"},[(0,t.createVNode)(h),(0,t.createElementVNode)("view",{class:"content-nav"},[(0,t.createElementVNode)("u-image",{class:"content-nav-home",src:d,mode:"widthFix",onClick:n[0]||(n[0]=(...r)=>a.homeClick&&a.homeClick(...r))})]),(0,t.createElementVNode)("view",{class:"content-c"},[(0,t.createElementVNode)("u-text",{class:"activity_content-title"},"\u5E2E\u6276\u6D3B\u52A8"),(0,t.createElementVNode)("u-text",{class:"activity_content-type"},"\u8BF7\u9009\u62E9\u4E1A\u52A1\u7C7B\u578B"),(0,t.createElementVNode)("view",{class:"activity_content-funcsc"},[(0,t.createElementVNode)("view",{class:"activity_content-funcs"},[((0,t.openBlock)(!0),(0,t.createElementBlock)(t.Fragment,null,(0,t.renderList)(i.funcItems,(r,x)=>((0,t.openBlock)(),(0,t.createElementBlock)("u-image",{class:(0,t.normalizeClass)(["activity_content-funcs-f",{"activity_content-funcs-first":x===0}]),src:r.icon,mode:"heightFix",onClick:D=>a.funcItemClick(r)},null,10,["src","onClick"]))),256))])]),(0,t.createVNode)(w,{type:"primary",class:"activity_content-logout",onClick:a.exitClick},{default:(0,t.withCtx)(()=>[(0,t.createTextVNode)("\u9000\u51FA")]),_:1},8,["onClick"])])])])}var u=_(L,[["render",z],["styles",[B]]]);var p=plus.webview.currentWebview();if(p){let e=parseInt(p.id),n="pages/activity/activity",c={};try{c=JSON.parse(p.__query__)}catch(i){}u.mpType="page";let s=Vue.createPageApp(u,{$store:getApp({allowDefault:!0}).$store,__pageId:e,__pagePath:n,__pageQuery:c});s.provide("__globalStyles",Vue.useCssStyles([...__uniConfig.styles,...u.styles||[]])),s.mount("#root")}})();

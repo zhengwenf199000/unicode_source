@@ -1,0 +1,351 @@
+<template>
+	<view class="content set_content">
+		<content-bg></content-bg>
+		<!-- <view class="set_content-placeholder"></view> -->
+		<view class="content-nav">
+			<view @click="versionClick">
+				<view class="set_content-versions">
+					<text class="set_content-versions--text">应用版本：v {{ appVersion }}</text>
+					<view v-if="appCanUpdate" class="set_content-versions--point"></view>
+				</view>
+				<view class="set_content-versions">
+					<text class="set_content-versions--text">内核版本：{{ wgtVersion }}</text>
+					<view v-if="wgtCanUpdate" class="set_content-versions--point"></view>
+				</view>
+			</view>
+		</view>
+		<view class="content-c set_content-c">
+			<!-- <scroller class="content-scroller"> -->
+			<uni-forms class="set_content-c--forms">
+				<forms-item class="set_content-c--forms---item" labelStyle="color: #666; font-weight: bold;"
+					labelAlign="right" labelPosition="top" label="系统名称：">
+					<uni-easyinput v-model:modelValue="systemName" placeholder="请输入系统名称" />
+					<button class="set_content-c--forms---item_content__btn" type="default" size="mini"
+						@click="syncSystemName">同步</button>
+				</forms-item>
+				<forms-item class="set_content-c--forms---item" labelStyle="color: #666; font-weight: bold;"
+					labelAlign="right" labelPosition="top" label="资源地址：">
+					<uni-easyinput v-model:modelValue="apiUrl" placeholder="请输入资源请求地址" />
+					<button class="set_content-c--forms---item_content__btn" type="default" size="mini"
+						@click="syncApiUrl">同步</button>
+				</forms-item>
+				<forms-item class="set_content-c--forms---item" labelStyle="color: #666; font-weight: bold;"
+					labelAlign="right" labelPosition="top" label="Mac地址：">
+					<uni-easyinput v-model:modelValue="mac" placeholder="请输入Mac地址" />
+					<button class="set_content-c--forms---item_content__btn" type="default" size="mini"
+						@click="syncMacAddress()">同步</button>
+				</forms-item>
+				<forms-item class="set_content-c--forms---item" labelStyle="color: #666; font-weight: bold;"
+					labelAlign="right" labelPosition="top" label="所属司法：">
+					<uni-easyinput v-model:modelValue="keyword" placeholder="请输入关键字搜索" />
+				</forms-item>
+			</uni-forms>
+
+			<view class="set_content-c--list---table">
+				<view class="set_content-c--list---table_row">
+					<view class="set_content-c--list---table_row__th" align="center">
+						<text class="set_content-c--list---table_row__th___text">所属单位</text>
+					</view>
+					<view class="set_content-c--list---table_row__th" align="center">
+						<text class="set_content-c--list---table_row__th___text">选择</text>
+					</view>
+				</view>
+			</view>
+			<scroller class="set_content-c--list">
+				<view class="set_content-c--list---table" stripe>
+					<view class="set_content-c--list---table_row" v-for="(justice, i) in searchedJustices" :key="i"
+						@click="checkJustice(justice)">
+						<view class="set_content-c--list---table_row__td" align="center">
+							<text class="set_content-c--list---table_row__td___text">{{ justice.deptName }}</text>
+						</view>
+						<view class="set_content-c--list---table_row__td" align="center">
+							<image v-if="checkedId === justice.deptId" class="set_content-c--list---table_row__check"
+								src="../../static/imgs/success.png"></image>
+						</view>
+					</view>
+				</view>
+			</scroller>
+			<!-- </scroller> -->
+			<view class="set_content-c__footer">
+				<button class="set_content-c--submit" type="primary" @click="submit">提交</button>
+				<button class="set_content-c--submit" @click="cancel">取消</button>				
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		apiUrl,
+		apis,
+		requestApi,
+		updateApiUrl,
+		updateDeptId,
+		updateDeptName,
+		updateSystemName,
+		updateMacAddress,
+		DEPT_ID,
+		DEPT_NAME,
+		systemName,
+		macAddress
+	} from '@/utils/http';
+	import plugins from '@/utils/plugins';
+
+	export default {
+		data() {
+			return {
+				systemName: systemName,
+				apiUrl: apiUrl,
+				mac: macAddress || this.$store.getters.deviceMac,
+				justices: [],
+				checkedId: DEPT_ID,
+				checkedName: '',
+				keyword: DEPT_NAME,
+				appVersion: '',
+				wgtVersion: '',
+				appCanUpdate: false,
+				wgtCanUpdate: false,
+				packageInfo: null,
+			}
+		},
+		computed: {
+			searchedJustices() {
+				return this.justices.filter(just => {
+					return just.deptName.indexOf(this.keyword) > -1
+				})
+			}
+		},
+		onLoad() {
+			if (process.env.NODE_ENV === 'development') {
+				this.justices = Array.from(new Array(20)).map((i, v) => ({
+					deptName: `测试司法所${v}`,
+					deptId: v
+				}))
+			}
+			this.requestJustices()
+			plugins.getCurrentVersionInfo().then(info => {
+				this.appVersion = info.appVersion
+				this.wgtVersion = info.wgtVersion
+			})
+			plugins.checkVersion((packageInfo) => {
+				this.packageInfo = packageInfo
+				this.appCanUpdate = packageInfo.type !== 'wgt'
+				this.wgtCanUpdate = packageInfo.type === 'wgt'
+			})
+		},
+		methods: {
+			requestJustices() {
+				requestApi(apis.getDepts).then(data => {
+					this.justices = data
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			syncSystemName() {
+				updateSystemName(this.systemName)
+				this.syncSuccess()
+				this.$store.commit('setSystemName', this.systemName)
+			},
+			syncApiUrl() {
+				if (!this.apiUrl) {
+					uni.showToast({
+						title: '地址不能为空',
+						icon: 'none'
+					})
+					return
+				}
+				updateApiUrl(this.apiUrl)
+				this.syncSuccess()
+				this.requestJustices()
+			},
+			syncMacAddress() {
+				if (!this.mac) {
+					uni.showToast({
+						title: 'mac地址不能为空',
+						icon: 'none'
+					})
+					return
+				}
+				updateMacAddress(this.mac)
+				this.syncSuccess()
+			},
+			syncSuccess() {
+				uni.showToast({
+					title: '同步成功！'
+				})
+			},
+			checkJustice(justice) {
+				console.log(justice);
+				this.checkedId = justice.deptId
+				this.checkedName = justice.deptName
+			},
+			submit() {
+				updateDeptId(this.checkedId)
+				updateDeptName(this.checkedName)
+				uni.reLaunch({
+					url: '/pages/launch/launch'
+				})
+				console.log(DEPT_ID, apiUrl, this.mac);
+			},
+			cancel() {
+				uni.navigateBack();
+			},
+			versionClick() {
+				if (this.packageInfo) {
+					uni.navigateTo({
+						url: '/pages/sample/upgrade',
+						animationType: 'none'
+					})
+				}
+			},
+		}
+	}
+</script>
+
+<style lang="scss">
+	.content-scroller {
+		display: flex;
+		flex-direction: column;
+		overflow: scroll;
+	}
+
+	.set_content {
+		flex: 1;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		
+		&-versions {
+			padding-right: 8px;
+			
+			&--text {
+				color: #fff;
+				font-size: 16px;
+				font-weight: bold;
+				line-height: 25px;
+			}
+			
+			&--point {
+				position: absolute;
+				top: 0px;
+				right: 0;
+				width: 8px;
+				height: 8px;
+				border-radius: 4px;
+				background-color: red;
+			}
+		}
+
+		&-placeholder {
+			position: relative;
+			flex: 1;
+			// background-color: teal;
+		}
+
+		&-c {
+			position: relative;
+			padding: 0 200px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+
+			&--forms {
+				margin-top: 10px;
+				&---item {
+					/* #ifndef APP-NVUE */
+					height: 35px;
+					/* #endif */
+					/* #ifdef APP-NVUE */
+					height: 60px;
+					/* #endif */
+
+					&_content {
+						display: flex;
+						flex-direction: row;
+						align-items: center;
+
+						&__btn {
+							margin-left: 10px;
+							height: 35px;
+							line-height: 35px;
+						}
+					}
+				}
+			}
+
+			&--list {
+				flex: 1;
+				/* #ifndef APP-NVUE */
+				overflow: scroll;
+				/* #endif */
+				display: flex;
+				flex-direction: column;
+				height: 290px;
+
+				&---table {
+					display: flex;
+					flex-direction: column;
+					align-self: center;
+
+					&_row {
+						width: 625px;
+						height: 44px;
+						display: flex;
+						flex-direction: row;
+
+						&__th {
+							flex: 1;
+							background-color: $main-color;
+							display: flex;
+							flex-direction: column;
+							justify-content: center;
+							align-items: center;
+
+							&___text {
+								color: #fff;
+							}
+						}
+
+						&__td {
+							flex: 1;
+							display: flex;
+							flex-direction: column;
+							justify-content: center;
+							align-items: center;
+							background-color: #fff;
+
+							&___text {
+								color: #666;
+							}
+						}
+
+						&__check {
+							width: 20px;
+							height: 20px;
+						}
+
+
+					}
+				}
+			}
+			
+			.set_content-c__footer {
+				flex-direction: row;
+				justify-content: space-around;
+			}
+
+			&--submit {
+				align-self: center;
+				margin: 10px 0;
+				width: 350px;
+				font-size: 16px;
+				font-weight: bold;
+				// color: #333;
+			}
+		}
+	}
+</style>

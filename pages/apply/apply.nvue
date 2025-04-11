@@ -1,0 +1,135 @@
+<template>
+	<view class="content apply_content" @click="capture">
+		<content-bg></content-bg>
+		
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c">
+			<text class="apply_content-title">自助申请、自助打印</text>
+			<text class="apply_content-type">请选择业务类型</text>
+			<view class="apply_content-funcsc">
+				<view class="apply_content-funcs">
+					<image class="apply_content-funcs-f" :class="{ 'apply_content-funcs-first': i === 0 }" v-for="(func, i) in funcItems" :key="i" :src="func.icon" mode="heightFix" @click="funcClick(func)"></image>
+					<!-- <image class="apply_content-funcs-f" src="@/static/apply/PhysicalSignCollection.png" mode="heightFix"></image> -->
+				</view>				
+			</view>
+			
+			<button type="primary" class="apply_content-logout" @click="exitClick">退出</button>
+		</view>
+	</view>
+</template>
+
+<script>
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				funcItems: [
+					{
+						path: '/pages/apply/change',
+						icon: '../../static/apply/PlaceOfExecution.png'
+					},
+					{
+						path: '',
+						icon: '../../static/apply/DecorrectAtExpiration.png'
+					},
+					{
+						path: '/pages/apply/files',
+						icon: '../../static/apply/Sign.jpg'
+					}
+				]
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+		},
+		methods: {
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			
+			funcClick(func) {
+				if (!func.path) {
+					uni.showToast({
+						title: '系统升级中...',
+						icon: 'none'
+					})
+					return
+				}
+				if (!this.idnum) {
+					uni.showToast({
+						title: '未获取到您的身份信息',
+						icon: 'none'
+					})
+					return
+				}
+				uni.navigateTo({
+					url: func.path + '?idnum=' + this.idnum,
+					animationType: 'none'
+				})	
+			},
+			exitClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.apply_content {
+		
+		.apply_content-title {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+		
+		.apply_content-type {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			text-align: center;
+			margin-top: 10px;
+		}
+		
+		.apply_content-funcsc {
+			flex: 1;
+			justify-content: center;
+		}
+		
+		.apply_content-funcs {
+			flex-direction: row;
+			justify-content: center;
+			height: 160px;
+			
+			.apply_content-funcs-f {
+				/* #ifndef APP-NVUE */
+				height: 100%;
+				/* #endif */
+				margin-left: 30px;
+			}
+			
+			.apply_content-funcs-first {
+				margin-left: 0;
+			}
+			
+			.apply_content-funcs-p {
+				width: 30px;
+			}
+		}
+		
+		.apply_content-logout {
+			align-self: flex-end;
+			background-color: $theme-dark-color;
+			margin-bottom: 15px;
+			color: #fff;
+			width: 100px;
+		}
+	}
+</style>

@@ -1,0 +1,131 @@
+<template>
+	<view class="content compound_content" @click="capture">
+		<content-bg>
+			<view class="content-nav">
+				<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+			</view>
+			<view class="content-c">
+				<text class="compound_content-title">综合报到</text>
+				<text class="compound_content-type">请选择业务类型</text>
+				<view class="compound_content-funcsc">
+					<view class="compound_content-funcs">
+						<image class="compound_content-funcs-f" :class="{ 'compound_content-funcs-first': i === 0 }" v-for="(func, i) in funcItems" :key="i" :src="func.icon" mode="heightFix" @click="funcClick(func)"></image>
+						<!-- <image class="compound_content-funcs-f" src="@/static/compound/PhysicalSignCollection.png" mode="heightFix"></image> -->
+					</view>				
+				</view>
+				
+				<button type="primary" class="compound_content-logout" @click="exitClick">退出</button>
+			</view>			
+		</content-bg>
+	</view>
+</template>
+
+<script>
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				funcItems: [
+					{
+						path: '/pages/compound/daily',
+						icon: '../../static/compound/DailyCheck-in.png'
+					},
+					{
+						path: '/pages/compound/education?type=0',
+						icon: '../../static/compound/IndividualEducation.png',
+						// needAuth: true
+					},
+					{
+						path: '/pages/compound/education?type=1',
+						icon: '../../static/compound/CollectiveEducation.png',
+						// needAuth: true
+					},
+					{
+						path: '/pages/compound/benefit',
+						icon: '../../static/compound/PublicBenefitActivities.png',
+						// needAuth: true
+					}
+				]
+			}
+		},
+		methods: {
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			exitClick() {
+				uni.navigateBack()
+			},
+			funcClick(func) {
+				const authInfo = this.$store.getters.compoundAuthInfo;
+				if (authInfo || !func.needAuth) {
+					uni.navigateTo({
+						url: func.path,
+						animationType: 'none'
+					})					
+				} else {
+					uni.showToast({
+						title: '请先完成日常报到',
+						icon: 'none'
+					})
+				}
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.compound_content {
+		
+		.compound_content-title {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+		
+		.compound_content-type {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			text-align: center;
+			margin-top: 10px;
+		}
+		
+		.compound_content-funcsc {
+			flex: 1;
+			justify-content: center;
+		}
+		
+		.compound_content-funcs {
+			flex-direction: row;
+			justify-content: center;
+			height: 160px;
+			
+			.compound_content-funcs-f {
+				/* #ifndef APP-NVUE */
+				height: 100%;
+				/* #endif */
+				margin-left: 30px;
+			}
+			
+			.compound_content-funcs-first {
+				margin-left: 0;
+			}
+			
+			.compound_content-funcs-p {
+				width: 30px;
+			}
+		}
+		
+		.compound_content-logout {
+			align-self: flex-end;
+			background-color: $theme-dark-color;
+			margin-bottom: 15px;
+			color: #fff;
+			width: 100px;
+		}
+	}
+</style>

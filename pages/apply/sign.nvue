@@ -1,0 +1,214 @@
+<template>
+	<view class="content" @click="capture" @touchmove="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c sign_content">
+			<breadcrumb title="自助申请自助打印" actionTitle="签署"></breadcrumb>
+
+			<view class="actions">
+				<view class="sign-pad-area">
+					<sign-pad ref="signPad" class="sign-pad" @getSignImg="getSignImg" :border="true" line="10"
+						color="#000"></sign-pad>
+					<button class="sign_content-backbtn" type="primary" @click="clearSign">重签</button>
+					<!-- <button class="sign_content-backbtn" type="primary" @click="commitSign">确认</button> -->
+				</view>
+				<view class="finger-area">
+					<view class="finger-content">
+						<view v-if="!gettedFingerpath" class="finger-icon-tint">
+							<image class="finger-icon" src="@/static/imgs/Finger.png"></image>
+							<text class="finger-tint">{{ isFinger ? '请按捺指纹...' : '点击“开始”按捺' }}</text>
+						</view>
+						<finger-print ref="fingerprint" class="finger"></finger-print>
+					</view>
+					<button class="sign_content-backbtn" type="primary" @click="startFingerprint">开始</button>
+					<!-- <button class="sign_content-backbtn" type="primary" @click="commitSign">确认</button> -->
+				</view>
+			</view>
+
+			<view class="sign_content-backbtns">
+				<button class="sign_content-backbtn" type="primary" @click="submitClick">提交</button>
+				<!-- <button class="sign_content-backbtn" type="primary" @click="mockClick">测试合并图片到pdf</button> -->
+				<button class="sign_content-backbtn" type="primary" @click="backClick">返回</button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		requestApi,
+		apis,
+		isDev
+	} from '@/utils/http'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+
+	export default {
+		mixins: [userInactiveMixin],
+		data() {
+			return {
+				gettedFingerpath: null,
+				isFinger: false
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum;
+		},
+		onReady() {
+			this.$refs.signPad.setColor('#000000')
+		},
+		onUnload() {
+			if (this.isFinger && !this.gettedFingerpath) {
+				this.$refs.fingerprint.closeFingerprint()
+			}
+		},
+		onShow() {
+
+		},
+		methods: {
+			clearSign() {
+				this.$refs.signPad.clear();
+			},
+			startFingerprint() {
+				if (this.isFinger) {
+					return
+				}
+				this.isFinger = true
+				try {
+					this.$refs.fingerprint.getFingerprintImage(path => {
+						if (path) {
+							this.gettedFingerpath = path;
+							this.$refs.fingerprint.closeFingerprint()
+						}
+					})					
+				} catch (error) {
+					uni.showModal({
+						title: 提示,
+						content: '指纹采集错误' + error.message,
+						showCancel: false
+					})
+				}
+			},
+			submitClick() {
+				if (isDev) {
+					uni.redirectTo({
+						url: '/pages/apply/pdf'
+					})
+					return
+				}
+				// #ifdef APP
+					this.$refs.signPad.getSignPicture((res) => {
+						if (!res) {
+							uni.showToast({
+								title: '请完成签名',
+								icon: 'none'
+							})
+							return
+						}
+						if (!this.gettedFingerpath) {
+							uni.showToast({
+								title: '请完成按捺',
+								icon: 'none'
+							})
+							return
+						}
+						this.$store.commit('setTargetDocumentImages', {
+							finger: this.gettedFingerpath,
+							sign: res
+						})
+						uni.redirectTo({
+							url: '/pages/apply/pdf'
+						})
+					})
+				// #endif
+				// #ifndef APP
+					uni.redirectTo({
+						url: '/pages/apply/pdf'
+					})
+				// #endif
+			},
+			mockClick() {
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			backClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.sign_content {
+		.actions {
+			flex: 1;
+		}
+
+		.action-area {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-around;
+		}
+
+		.sign-pad-area {
+			@extend .action-area;
+
+			.sign-pad {
+				width: 800px;
+				height: 150px;
+				background: wheat;
+			}
+		}
+
+		.finger-area {
+			@extend .action-area;
+			margin-top: 20px;
+
+			.finger-content {
+				flex-direction: row;
+				width: 800px;
+
+				.finger-icon-tint {
+					.finger-icon {
+						width: 150px;
+						height: 180px;
+					}
+
+					.finger-tint {
+						margin-top: 5px;
+						font-size: 18px;
+						text-align: center;
+						color: $uni-color-primary;
+					}
+				}
+
+				.finger {
+					flex: 1;
+				}
+			}
+
+		}
+
+		.sign_content-backbtns {
+			margin: 10px 0;
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+
+			& .sign_content-backbtn {
+				width: 100px;
+				background-color: $theme-dark-color;
+			}
+		}
+	}
+</style>

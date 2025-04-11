@@ -1,0 +1,663 @@
+<template>
+	<view class="content register_detail_content" @click="capture">
+		<content-bg></content-bg>
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c">
+			<view class="register_detail_content-breadcrumb">
+				<view class="register_detail_content-breadcrumb-item"
+					:class="{ 'register_detail_content-breadcrumb-last': path.notCommon}"
+					:style="{ opacity: path.hidden ? 0 : 1 }" v-for="(path, i) in registerPaths" :key="path.type" @click="testSave()">
+					<image v-if="currentPathIndex < i" class="register_detail_content-breadcrumb-item-icon"
+						:src="path.icon" mode="widthFix"></image>
+					<image v-else class="register_detail_content-breadcrumb-item-icon" :src="path.selectedIcon"
+						mode="widthFix"></image>
+				</view>
+			</view>
+
+			<view class="register_detail_content-c">
+				<view v-if="currentPath === 'recognizeFace'" class="register_detail_content-c-recognizeFace">
+					<scroller v-if="biosignatureStep === 0" class="register_detail_content-c-improveInfo-step1">
+						<text class="register_detail_content-c-step-status">正在检测人脸...</text>
+						<!-- <image style="width: 100px; height: 100px" :src="facePath"></image> -->
+						<alive-detect ref="alive_detect" class="register_detail_content-c-recognizeFace-alive_detect"
+							cameratype="black" @onDetectFailure="detectFailure" @onDetectSuccess="detectSuccess">
+						</alive-detect>
+					</scroller>
+					<!-- 识别指纹 -->
+					<scroller v-if="biosignatureStep === 1" class="register_detail_content-c-improveInfo-step1">
+						<text class="register_detail_content-c-step-status">请按压指纹...</text>
+						<!-- <image style="width: 100px; height: 100px" :src="gettedFingerpath"></image> -->
+						<view class="register_detail_content-c-improveInfo-step1-fingerprint">
+							<image v-if="!gettedFingerpath"
+								class="register_detail_content-c-improveInfo-step1-fingerprint_content"
+								src="@/static/imgs/Finger.png"></image>
+							<finger-print ref="fingerprint"
+								class="register_detail_content-c-improveInfo-step1-fingerprint_fp"
+								@fingerprintFinish="fingerprintFinish">
+							</finger-print>
+						</view>
+					</scroller>
+					<!-- 识别声纹 -->
+					<scroller v-if="biosignatureStep === 2" class="register_detail_content-c-improveInfo-step2">
+						<image class="register_detail_content-c-improveInfo-step2-audio" src="@/static/imgs/Voice.png"
+							@click="startOrStopRecording"></image>
+						<text
+							class="register_detail_content-c-improveInfo-step2-audio register_detail_content-c-improveInfo-step2-audio_status">{{ recording ? '正在录音...' : '' }}</text>
+						<text
+							class="register_detail_content-c-improveInfo-step2-tint">{{ recording ? '请点击录制按钮结束录制' : '请点击录制按钮，贴近麦克风开始录制' }}</text>
+						<view class="register_detail_content-c-improveInfo-step2-sample">
+							<text class="register_detail_content-c-improveInfo-step2-tipb">您可以朗读下面这段文字：</text>
+							<text
+								class="register_detail_content-c-improveInfo-step2-tip">我是***司法所的矫正对象***，近期我都有认真反思自己所犯的罪行，并充分认识到罪行的严重性，以后绝不再犯，我服从矫正机构的管理，接受司法机关的监督，我会按时参加矫正机构组织的教育学习、社区服务活动，主动签到上报位置，汇报思想、汇报个人活动情况，我服从矫正机构的安排，积极进取，力争早日成为一个合格的公民。汇报人：***</text>
+						</view>
+					</scroller>
+					<!-- <image style="height: 200; width: 200; background: red" :src="facePath"></image> -->
+				</view>	
+				<view v-if="currentPath === 'uploadDoc'" class="register_detail_content-c-uploadDoc">
+
+					<!-- #ifdef APP-NVUE -->
+					<scroller class="register_detail_content-c-uploadDoc-left">
+						<view class="register_detail_content-c-uploadDoc-left-writ"
+							:class="{ 'register_detail_content-c-uploadDoc-left-writselected': writIndex === i }"
+							v-for="(writ, i) in writObjects" :key="i" @click="writSelected(i)">
+							<text class="register_detail_content-c-uploadDoc-left-writ-text"
+								:class="{ 'register_detail_content-c-uploadDoc-left-writselected-text': writIndex === i }">{{ writ.name }}</text>
+						</view>
+					</scroller>
+					<!-- #endif -->
+
+					<!-- #ifndef APP-NVUE -->
+					<scroll-view class="register_detail_content-c-uploadDoc-left" :scroll-y="true">
+						<view class="register_detail_content-c-uploadDoc-left-writ"
+							:class="{ 'register_detail_content-c-uploadDoc-left-writselected': writIndex === i }"
+							v-for="(writ, i) in writObjects" :key="i" @click="writSelected(i)">
+							<text class="register_detail_content-c-uploadDoc-left-writ-text"
+								:class="{ 'register_detail_content-c-uploadDoc-left-writselected-text': writIndex === i }">{{ writ.name }}</text>
+						</view>
+					</scroll-view>
+					<!-- #endif -->
+					<view class="register_detail_content-c-uploadDoc-right">
+						<image class="register_detail_content-c-uploadDoc-right-add"
+							:src="currentWritObj.done ? '../../static/imgs/filedone.png' : '../../static/imgs/add.png'"
+							@click="chooseFile">
+						</image>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		requestApi,
+		upload,
+		apis,
+		DEPT_NAME
+	} from '@/utils/http'
+	import filePicker from '@/utils/filePicker'
+	import plugins from '@/utils/plugins'
+	import index from '@/utils/index'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+
+	const {
+		moduleIdCardAct
+	} = plugins
+	const recorderManager = uni.getRecorderManager();
+
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				isOfflineMode: false,
+				idnum: '',
+				codeCountdowning: false,
+				countdownTime: 60,
+				currentPathIndex: 2,
+				// 3、完善信息 step 0:填写信息、1:录入指纹、2:录入声纹
+				improveInfoStep: 0,
+				// 生物特征录入 step 0: 指纹、1：声纹、2：人脸
+				biosignatureStep: 0,
+				// 本地路径
+				gettedFacePath: '',
+				gettedRecordPath: '',
+				gettedFingerpath: '',
+				// 远程路径
+				facePath: '',
+				fingerpath: '',
+				recordFile: '',
+				recording: false,
+				// 4、上传文书，包含：法律文书、委托调查函、居住地审核函、社区矫正对象执行地变更函、起诉书、刑事判决书、执行通知书、罪犯执行告知书、罪犯结案登记表、刑事裁定书、刑事附带民事判决书
+				writTypes: [
+					'法律文书', '委托调查函', '居住地审核函', '社区矫正对象执行地变更函', '起诉书', '刑事判决书', '执行通知书', '罪犯执行告知书', '罪犯结案登记表', '刑事裁定书',
+					'刑事附带民事判决书'
+				],
+				writObjects: [],
+				writIndex: 0,
+				registerPaths: [{
+						type: 'readIdCard',
+						selectedIcon: '../../static/register/detail/ReadIDCard.png'
+					},
+					{
+						type: 'improveInfo',
+						icon: '../../static/register/detail/ImproveInformation1.png',
+						selectedIcon: '../../static/register/detail/ImproveInformation.png'
+					},
+					// {
+					// 	type: 'inputDoc',
+					// 	icon: '../../static/register/detail/UploadDocuments1.png',
+					// 	selectedIcon: '../../static/register/detail/UploadDocuments.png'
+					// },
+					{
+						type: 'recognizeFace',
+						icon: '../../static/register/detail/FaceRecognition1.png',
+						selectedIcon: '../../static/register/detail/FaceRecognition.png',
+						notCommon: true
+					},
+				]
+			}
+		},
+		watch: {
+			currentPath: {				handler(newV, oldV) {
+					this.currentPathChange(newV)
+				},
+				immediate: true
+			},
+			biosignatureStep(newV) {
+				if (newV === 0) {
+					this.startAliveDetecting()
+				} else if (newV === 1) {
+					this.startFingerprint()
+				}
+				this.capture();
+			},
+			codeCountdowning(newV) {
+				if (newV) {
+					if (!this.coutdownInterval) {
+						this.coutdownInterval = setInterval(() => {
+							if (this.codeCountdowning) {
+								if (this.countdownTime <= 1) {
+									this.countdownTime = 60
+									this.codeCountdowning = false
+									return
+								}
+								this.countdownTime--
+							}
+						}, 1000)
+					}
+				}
+			},
+		},
+		computed: {
+			registerPathsSteps() {
+				return this.registerPaths.map(p => p.type)
+			},
+			currentPath() {
+				return this.registerPathsSteps[this.currentPathIndex]
+			},
+			currentWritObj() {
+				return this.writObjects[this.writIndex]
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum;
+			this.name = options.name;
+			this.isOfflineMode = options.mode == 'offline';
+			// 文书对象
+			this.writObjects = this.writTypes.map((type, i) => ({
+				index: i,
+				name: type
+			}))
+			// this.getPickerRangeData()
+			this.startVoiceRecording()
+		},
+		onReady() {
+			// 需要在onReady中设置规则
+			// this.$refs.form.setRules(this.rules)
+		},
+		onUnload() {
+			try {
+				this.$refs.alive_detect && this.$refs.alive_detect.stopDetecting();
+				this.$refs.fingerprint && this.$refs.fingerprint.closeFingerprint();
+				this.coutdownInterval && clearInterval(this.codeCountdowning);
+			} catch(e) {
+				console.error(e);
+			}
+		},
+		methods: {
+			currentPathChange(newV) {
+				if (newV === 'recognizeFace') {
+					if (this.biosignatureStep === 0) {
+						this.startAliveDetecting()
+					} else if (this.biosignatureStep === 1) {
+						this.startFingerprint()
+					} else if (this.biosignatureStep === 2) {}
+					return
+				}
+				if (newV === 'uploadDoc') {
+					// todo
+					return
+				}
+			},
+			startAliveDetecting() {
+				// #ifdef APP-PLUS-NVUE
+				// 待优化，暂用延时处理
+				uni.$u.sleep(1000).then(() => {
+					this.$refs.alive_detect.startDetecting((path) => {
+						console.log(path);
+						if (path) {
+							try {
+								this.$refs.alive_detect.stopDetecting();
+							} catch(e) {
+								console.error(e);
+							}
+							this.gettedFacePath = path;
+							// 离线模式直接采集下一项
+							if (this.isOfflineMode) {
+								this.nextStep();
+								return;
+							}
+							// 上传人脸
+							uni.showLoading({
+								title: '上传中...'
+							})
+							this.upload(path, 'renlian', (remote) => {
+								// 成功记录远程人脸链接
+								this.facePath = remote
+								uni.showLoading({
+									title: '正在保存人脸信息...'
+								})
+								this.saveBiosignature(remote, 1, () => {
+									uni.showToast({
+										title: '保存成功！'
+									})
+									this.nextStep();
+								})
+							})
+						} else {
+
+						}
+					})
+				})
+				// #endif
+			},
+			startFingerprint() {
+				// 指纹识别开启
+				uni.$u.sleep(500).then(() => {
+					this.$refs.fingerprint.getFingerprintImage(path => {
+						if (path) {
+							try {
+								this.$refs.fingerprint.closeFingerprint();
+							} catch(e) {
+								console.error(e);
+							}
+							console.log('获取到的指纹图片：', path);
+							this.gettedFingerpath = path;
+							// 离线模式直接采集下一项
+							if (this.isOfflineMode) {
+								this.nextStep();
+								return;
+							}
+							// 上传指纹
+							this.upload(path, 'zhiwen', (remote) => {
+								// 成功记录远程指纹链接
+								this.fingerpath = remote
+								uni.showLoading({
+									title: '正在保存指纹信息...'
+								})
+								this.saveBiosignature(remote, 2, () => {
+									uni.showToast({
+										title: '保存成功！'
+									})
+									this.nextStep();
+								})
+							})
+						}
+					})
+				})
+			},
+			startVoiceRecording() {
+				// 获取到语音
+				// #ifndef H5
+				recorderManager.onStop(r => {
+					// 离线模式直接采集下一项
+					if (this.isOfflineMode) {
+						// 录入的语音文件，存到本地
+						uni.saveFile({
+							tempFilePath: r.tempFilePath,
+							complete: (r) => {
+								this.gettedRecordPath = r.savedFilePath;
+								this.nextStep();
+							}
+						})
+						return;
+					}
+					// 录音完成，上传录音
+					this.upload(r.tempFilePath, 'shenwen', (remote) => {
+						// 成功记录远程录音链接
+						this.recordFile = remote
+						uni.showLoading({
+							title: '正在保存声纹信息...'
+						})
+						this.saveBiosignature(remote, 3, () => {
+							this.nextStep();
+						})
+					})
+				})
+				// #endif
+			},
+			testSave() {
+				if (process.env.NODE_ENV === 'development') {
+					if (this.isOfflineMode) {
+						this.$store.state.offline.instance.addFeature(this.idnum, this.gettedFacePath, this.gettedRecordPath, this.gettedFingerpath, this.name);
+					}
+				}
+				// uni.navigateBack();
+			},
+			sendCode() {
+				// 发送验证码
+				uni.showLoading({
+					title: '正在发送...'
+				})
+				setTimeout(() => {
+					this.codeCountdowning = true
+					uni.hideLoading()
+				}, 500)
+			},
+			upload(path, type, successCallback) {
+				uni.showLoading({
+					title: '上传中...'
+				})
+				upload(path, type).then(remote => {
+					uni.hideLoading()
+					successCallback(remote)
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			saveBiosignature(filePath, type, successCallback) {
+				const api = `${ apis.saveBiosignature }?id_num=${ this.idnum }&tzlx=${ type }&filePath=${ filePath }`
+				uni.showLoading({
+					title: '正在保存信息...'
+				})
+				requestApi(api, null, {
+					token: this.$store.getters.token
+				}).then(data => {
+					uni.hideLoading()
+					successCallback()
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			homeClick() {
+				if (this.isOfflineMode) {
+					uni.navigateBack();
+					return;
+				}
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			nextStep() {
+				// 完成采集
+				if (this.biosignatureStep >= 2) {
+					uni.showToast({
+						title: '已完成入矫！'
+					})
+					if (this.isOfflineMode) {
+						this.$store.state.offline.instance.addFeature(this.idnum, this.gettedFacePath, this.gettedRecordPath, this.gettedFingerpath, this.name);
+						// Offline.get().addFeature(this.idnum, this.gettedFacePath, this.gettedRecordPath, this.gettedFingerpath);
+						uni.navigateBack();
+						return;
+					}
+					uni.reLaunch({
+						url: '/pages/home/home'
+					})
+					return;
+				}
+				this.biosignatureStep++;
+				try {
+					this.capture();	
+				} catch(e) {
+					uni.showToast({
+						title: e.message || e,
+						icon:'none'
+					});
+				}
+			},
+			detectSuccess() {
+				// todo:识别成功,待上传人脸图片
+				console.log('detectSuccess');
+				// #ifdef APP-PLUS-NVUE
+				// this.$refs.alive_detect.stopDetecting()
+				// #endif
+			},
+			detectFailure() {
+				// 识别失败
+				console.log('detectFailure');
+			},
+			fingerprintFinish(e) {
+				const path = e.detail.fingerpath
+				this.fingerpath = path
+				this.improveInfoStep++
+			},
+			startOrStopRecording() {
+				this.recording ? this.stopRecording() : this.startRecording()
+				this.recording = !this.recording
+			},
+			startRecording() {
+				recorderManager.start({
+					duration: 600000
+				})
+			},
+			stopRecording() {
+				recorderManager.stop()
+			},
+			writSelected(i) {
+				this.writIndex = i
+			},
+			chooseFile() {
+				// #ifndef APP-PLUS
+				// const writ = this.currentWritObj
+				// writ.done = true
+				// writ.path = 'remote'
+				// return
+				uni.chooseFile({
+					success: (res) => {
+						const filePath = res.tempFilePaths[0]
+						console.log(filePath);
+						this.upload(filePath, '', (remote) => {
+							const writ = this.currentWritObj
+							writ.done = true
+							writ.path = remote
+							console.log(remote);
+						})
+					}
+				})
+				return
+				// #endif
+				filePicker.open((path) => {
+					console.log(path);
+					this.upload(path, '', (remote) => {
+						const writ = this.currentWritObj
+						writ.done = true
+						writ.path = remote
+					})
+				})
+			},
+		}
+	}
+</script>
+
+<style lang="scss">
+	.register_detail_content {
+		/* #ifndef APP */
+		height: 100%;
+		/* #endif */
+		flex: 1;
+
+		.register_detail_content-breadcrumb {
+			flex-direction: row;
+			margin-top: 10px;
+
+			.register_detail_content-breadcrumb-item {
+				flex: 1;
+
+				.register_detail_content-breadcrumb-item-icon {
+					/* #ifndef APP-NVUE */
+					width: 100%;
+					/* #endif */
+				}
+			}
+
+			.register_detail_content-breadcrumb-last {
+				flex: 0.92;
+			}
+		}
+
+		.register_detail_content-c {
+			flex: 1;
+			margin: 10px 0;
+			background-color: #fff;
+			overflow: hidden;
+
+			.register_detail_content-c-step-status {
+				color: $theme-dark-color;
+				// margin-top: 20px;
+				font-size: 20px;
+				font-weight: bold;
+				text-align: center;
+			}
+
+			.register_detail_content-c-recognizeFace {
+				flex: 1;
+				align-items: center;
+				justify-content: center;
+
+				.register_detail_content-c-recognizeFace-alive_detect {
+					margin-top: 20px;
+					width: 800px;
+					height: 300px;
+					background-color: wheat;
+				}
+
+				.register_detail_content-c-improveInfo-step1 {
+					justify-content: center;
+
+					.register_detail_content-c-improveInfo-step1-fingerprint {
+						position: relative;
+						margin-top: 30px;
+						width: 200px;
+						height: 240px;
+
+						&_content {
+							position: absolute;
+							top: 0;
+							left: 0;
+							width: 200px;
+							height: 240px;
+						}
+
+						&_fp {
+							flex: 1;
+						}
+					}
+				}
+
+				.register_detail_content-c-improveInfo-step2 {
+					padding: 20px;
+					flex: 1;
+					align-items: center;
+					justify-content: center;
+
+					.register_detail_content-c-improveInfo-step2-audio {
+						width: 100px;
+						height: 100px;
+						// background-color: papayawhip;
+					}
+
+					.register_detail_content-c-improveInfo-step2-audio_status {
+						padding-top: 10px;
+						text-align: center;
+						color: $main-color;
+					}
+
+					.register_detail_content-c-improveInfo-step2-tint {
+						color: $theme-dark-color;
+						font-size: 18px;
+						font-weight: bold;
+						text-align: center;
+					}
+
+					.register_detail_content-c-improveInfo-step2-sample {
+						align-items: flex-start;
+					}
+
+					.register_detail_content-c-improveInfo-step2-tipb {
+						color: $theme-dark-color;
+						font-size: 18px;
+						font-weight: bold;
+					}
+
+					.register_detail_content-c-improveInfo-step2-tip {
+						color: $theme-dark-color;
+						font-size: 16px;
+						margin-top: 5px;
+					}
+				}
+			}
+
+			.register_detail_content-c-uploadDoc {
+				flex: 1;
+				flex-direction: row;
+				overflow: hidden;
+
+				.register_detail_content-c-uploadDoc-left {
+					flex: 1;
+					/* #ifndef APP-NVUE */
+					height: 68vh;
+					/* #endif */
+
+					.register_detail_content-c-uploadDoc-left-writ {
+						background-color: #f8f9f9;
+						padding: 12px 15px;
+						border-bottom: #ddd 1px solid;
+					}
+
+					.register_detail_content-c-uploadDoc-left-writ-text {
+						color: #666;
+						font-weight: bold;
+						font-size: 18px;
+					}
+
+					.register_detail_content-c-uploadDoc-left-writselected-text {
+						color: #fff;
+					}
+
+					.register_detail_content-c-uploadDoc-left-writselected {
+						background-color: $theme-dark-color;
+					}
+				}
+
+				.register_detail_content-c-uploadDoc-right {
+					flex: 2;
+					padding: 15px;
+					background-color: #fff;
+
+					.register_detail_content-c-uploadDoc-right-add {
+						width: 120px;
+						height: 120px;
+					}
+				}
+			}
+		}
+	}
+</style>

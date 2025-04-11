@@ -1,0 +1,43 @@
+{
+  "hash": "aa4fe299",
+  "configHash": "44840298",
+  "lockfileHash": "ee9def68",
+  "browserHash": "1c25f113",
+  "optimized": {
+    "moment": {
+      "src": "../../../../../node_modules/moment/dist/moment.js",
+      "file": "moment.js",
+      "fileHash": "6938b70b",
+      "needsInterop": false
+    },
+    "pdf-lib": {
+      "src": "../../../../../node_modules/pdf-lib/es/index.js",
+      "file": "pdf-lib.js",
+      "fileHash": "5b33ca0b",
+      "needsInterop": false
+    },
+    "xmldom": {
+      "src": "../../../../../node_modules/xmldom/lib/dom-parser.js",
+      "file": "xmldom.js",
+      "fileHash": "3a7ca96a",
+      "needsInterop": true
+    },
+    "html2canvas": {
+      "src": "../../../../../node_modules/html2canvas/dist/html2canvas.esm.js",
+      "file": "html2canvas.js",
+      "fileHash": "b7708bcd",
+      "needsInterop": false
+    },
+    "jspdf/dist/jspdf.umd": {
+      "src": "../../../../../node_modules/jspdf/dist/jspdf.umd.js",
+      "file": "jspdf_dist_jspdf__umd.js",
+      "fileHash": "a8d1a23a",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-GFT2G5UO": {
+      "file": "chunk-GFT2G5UO.js"
+    }
+  }
+}

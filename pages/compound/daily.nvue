@@ -1,0 +1,122 @@
+<template>
+	<view class="content">
+		<content-bg></content-bg>
+		
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c daily_content">
+			<view class="daily_content">
+				<image class="daily_content-icon" v-if="success" src="@/static/imgs/success.png"></image>
+				<image class="daily_content-icon" v-if="failure" src="@/static/imgs/failure.png"></image>
+				<text class="daily_content-status">{{ name }} 您好，{{ (!success && !failure) ? '正在签到...' : '' }}{{ success ? '您已成功签到！' : '' }}{{ failure ? '签到失败，请重试！' : '' }}</text>				
+			</view>
+			<text class="daily_content-timeout" v-if="success || failure">{{ leftSecond }} 秒后自动关闭</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	import moment from 'moment'
+	import {
+		requestApi,
+		apis
+	} from '@/utils/http'
+
+	export default {
+		data() {
+			return {
+				success: false,
+				failure: false,
+				name: '',
+				leftSecond: 3
+			}
+		},
+		watch: {
+			leftSecond(newV) {
+				if (newV <= 0) {
+					uni.navigateBack()
+				}
+			}
+		},
+		onLoad(options) {
+			const {
+				idnum,
+				name,
+				facepath
+			} = options
+			this.idnum = idnum
+			this.facepath = facepath
+			this.name = name
+			console.log(idnum, facepath);
+		},
+		onReady() {
+			this.signIn()
+		},
+		onUnload() {
+			this.interval && clearInterval(this.interval)
+		},
+		methods: {
+			signIn() {
+				uni.showLoading({
+					title: '正在签到...'
+				})
+				const {
+					name, idnum, facepath
+				} = this
+				requestApi(apis.signIn, {
+					CRIMINAL_NAME: name,
+					CRIMINAL_SFZH: idnum,
+					FILE_PATH: facepath,
+					SIGN_IN_TYPE: 2,
+					SIGN_IN_TIME: moment().format('yyyy-MM-DD HH:mm:ss')
+				}).then(data => {
+					uni.hideLoading()
+					this.success = true
+					this.$store.commit('setAuthInfoForCompound', { facepath, idnum, name })
+					this.startTimeout()
+				}).catch(err => {
+					uni.hideLoading()
+					this.failure = true
+					this.startTimeout()
+				})
+			},
+			startTimeout() {
+				this.leftSecond = 3
+				if (!this.interval) {
+					this.interval = setInterval(() => {
+						this.leftSecond--
+					}, 1000)					
+				}
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+		}
+	}
+</script>
+
+<style lang="scss">
+	.daily_content {
+		align-items: center;
+		justify-content: space-around;
+		& .daily_content-icon {
+			width: 150px;
+			height: 150px;
+		}
+		
+		& .daily_content-status {
+			margin-top: 25px;
+			font-size: 26px;
+			font-weight: bold;
+			color: $theme-dark-color;
+		}
+		
+		& .daily_content-timeout {
+			font-size: 20px;
+			color: $theme-dark-color;
+		}
+	}
+</style>

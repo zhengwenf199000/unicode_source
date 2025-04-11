@@ -1,0 +1,44 @@
+<template>
+	<view class="finger-print-c">
+		<text class="finger-print-tip">请按压指纹...</text>
+		<finger-print ref="fingerprint" style="width: 100px; height: 100px;" class="finger-print"></finger-print>
+		
+		<button class="button" @click="getFingerprint">获取指纹</button>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+			getFingerprint() {
+				this.$refs.fingerprint.getFingerprintImage()
+			}
+		}
+	}
+</script>
+
+<style>
+	.finger-print-c {
+		flex: 1;
+		align-items: center;
+	}
+	
+	.finger-print-tip {
+		color: red;
+		margin-top: 20px;
+	}
+	
+	.finger-print {
+		margin-top: 20px;
+		background-color: antiquewhite;
+	}
+	
+	.button {
+		margin-top: 20px;
+	}
+</style>

@@ -1,0 +1,318 @@
+<template>
+	<view class="content auth_content" @click="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+
+		<view class="content-c">
+			<swiper class="auth_content-swiper" :current="step" :disable-touch="true">
+				<swiper-item>
+					<view class="auth_content-idcardauth">
+						<text class="auth_content-idcardauth--status">身份信息验证中...</text>
+						<image class="auth_content-idcardauth--icon" src="@/static/register/detail/SwipeIDCard.png"
+							mode="heightFix"></image>
+
+						<button v-if="showManual" class="auth_content-idcardauth--btn" type="primary"
+							@click="manualInput">未携带身份证，手动录入</button>
+					</view>
+				</swiper-item>
+				<swiper-item>
+					<view class="auth_content-faceauth">
+						<text class="auth_content-faceauth--status">检测人脸...</text>
+						<alive-detect v-if="step === 1" ref="alive_detect" class="auth_content-faceauth--alive_detect"
+							cameratype="black" @onDetectFailure="detectFailure" @onDetectSuccess="detectSuccess">
+						</alive-detect>
+					</view>
+				</swiper-item>
+			</swiper>
+		</view>
+
+		<input-popup ref="popup" title="手动录入身份证信息" placeholder="" :labelWidth="100" :forms="idcardInputForm" @afterVerify="idcardAfterVerify" @cancel="cancelManualInput">
+		</input-popup>
+	</view>
+</template>
+
+<script>
+	import {
+		requestApi,
+		apiUrl,
+		apis,
+		upload
+	} from '@/utils/http'
+	import plugins from '@/utils/plugins'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	const {
+		moduleIdCardAct,
+		moduleFaceCompare
+	} = plugins
+
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				idcardInputForm: [{
+					label: '身份证号：',
+					err: '身份证号码格式不正确',
+					placeholder: '请输入身份证号码',
+					type: 'text',
+					verify(val) {
+						return uni.$u.idCard(val);
+					}
+				}],
+				step: 0,
+				detectingFacePath: '',
+				lastFacepath: '',
+				facepath: '',
+				number: '',
+				name: ''
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			},
+			showManual() {
+				// return this.type === 'idCardAndFace';
+				return true;
+			},
+		},
+		watch: {
+			step(newV) {
+				if (newV === 1) {
+					this.startDetecting();
+				}
+			},
+			number() {
+				this.capture();
+			},
+			detectingFacePath() {
+				this.capture();
+			}
+		},
+		onLoad(options) {
+			this.target = options.target
+			this.type = options.type
+			console.log(this.target);
+
+			this.startIdCardAct()
+		},
+		onUnload() {
+			moduleIdCardAct.stop()
+		},
+		methods: {
+			homeClick() {
+				uni.navigateBack({ delta: getCurrentPages().length });
+				// uni.reLaunch({
+				// 	url: '/pages/home/home'
+				// })
+			},
+			manualInput() {
+				moduleIdCardAct.stop()
+				this.$refs.popup.open();
+			},
+			idcardAfterVerify(val) {
+				this.findBiosignature(val[0]);
+			},
+			cancelManualInput() {
+				this.startIdCardAct();
+			},
+			compareFaces(face1, face2, resultCallback) {
+				// resultCallback(true)
+				moduleFaceCompare.compareFeature(face1, face2, resultCallback);
+			},
+			startIdCardAct() {
+				moduleIdCardAct.start(idCardInfo => {
+					uni.showToast({
+						title: '身份信息已获取！',
+						icon: 'none'
+					})
+					if (idCardInfo) {
+						this.idCardInfo = idCardInfo
+						this.number = idCardInfo.number;
+						this.name = idCardInfo.name;
+						moduleIdCardAct.stop();
+						if (process.env.NODE_ENV === 'development') {
+							this.redirectToTarget();
+						} else {
+							this.findBiosignature(idCardInfo.number);
+						}
+						// if (this.type === 'idCard') {
+						// 	console.log('only id card!');
+						// 	this.redirectToTarget()
+						// } else {
+						// 	console.log('id card and face!');
+						// 	if (process.env.NODE_ENV === 'development') {
+						// 		this.redirectToTarget()
+						// 	} else {
+						// 		this.findBiosignature(idCardInfo.number)
+						// 	}
+						// }
+					}
+					console.log(idCardInfo);
+				})
+			},
+			// 通过身份证号码查找已录入的生物特性
+			findBiosignature(number) {
+				this.number = number;
+				uni.showLoading({
+					title: '读取资料...'
+				})
+				requestApi(apis.findBiosignature, {
+					id_num: number
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading();
+					if (this.type === 'idCard') {
+						this.redirectToTarget();
+						return;
+					}
+					// "voicePath": "",     //声纹路径
+					// "fingerPath": "",    //指纹路径
+					// "facePath": ""       //人脸路径
+					if (!data.facePath) {
+						uni.showToast({
+							title: '暂无您的体征信息，请先体征采集',
+							icon: 'none'
+						})
+						uni.$u.sleep(2000).then(() => {
+							uni.navigateBack()
+						})
+					} else {
+						// 保存人脸信息进入下一步
+						// this.lastFacepath = data.facePath
+						// 替换为当前环境
+						this.lastFacepath = data.facePath.replace('http://59.206.216.219:9090', apiUrl)
+						this.step = 1
+					}
+				}).catch(err => {
+					uni.showToast({
+						title: err || '您还未入矫',
+						icon: 'none'
+					})
+					uni.$u.sleep(1000).then(() => {
+						uni.navigateBack()
+					})
+				})
+			},
+			// 开始人脸检测
+			async startDetecting() {
+				await uni.$u.sleep(500);
+				this.$refs.alive_detect.startDetecting((path) => {
+					// const path = 'sd123'
+					console.log(path);
+					if (path) {
+						this.$refs.alive_detect.stopDetecting()
+						this.detectingFacePath = path;
+						// 与录入人脸比对
+						uni.showLoading({
+							title: '正在验证...'
+						})
+						this.compareFaces(this.lastFacepath, path, (r) => {
+							if (r) {
+								// 人脸匹配通过，上传本地人脸登记信息
+								uni.showLoading({
+									title: '正在更新...'
+								})
+								upload(path, 'renlian').then(data => {
+									uni.hideLoading();
+									this.facepath = data
+									this.redirectToTarget()
+								}).catch(err => {
+									uni.showToast({
+										title: '上传失败:' + err,
+										icon: 'none'
+									})
+								})
+							} else {
+								uni.showToast({
+									title: '人脸验证不匹配，请重试！',
+									icon: 'none'
+								})
+								uni.$u.sleep(2000).then(() => {
+									uni.navigateBack()
+								})
+							}
+						})
+					} else {
+
+					}
+				})
+			},
+			redirectToTarget() {
+				let url =
+					`${ this.target }${ this.target.indexOf('?') >= 0 ? '&' : '?' }idnum=${ this.number }&name=${ this.name }`
+				console.log('redirectToTarget:', this.target, url);
+				if (this.type !== 'idCard') {
+					url += `&facepath=${ this.facepath }`
+				}
+				if (this.target.indexOf('print') > -1) {
+					// 安卓设备：.nvue页面重定向到.vue页面，然后返回会出现白页面，暂使用该方法避免
+					uni.navigateBack({
+						animationType: 'none',
+						async success(){
+							await uni.$u.sleep(5);
+							uni.navigateTo({
+								url,
+								animationType: 'none'
+							})							
+						}
+					});
+					return
+				}
+				uni.redirectTo({
+					url
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.auth_content {
+		flex: 1;
+
+		& .auth_content-swiper {
+			flex: 1;
+		}
+
+		& .auth_content-idcardauth {
+			flex: 1;
+			justify-content: center;
+			align-items: center;
+
+			& .auth_content-idcardauth--status {
+				color: $theme-dark-color;
+				font-size: 20px;
+				font-weight: bold;
+				margin-bottom: 20px;
+			}
+
+			& .auth_content-idcardauth--btn {
+				margin-top: 20px;
+				border: none;
+			}
+		}
+
+		& .auth_content-faceauth {
+			flex: 1;
+			align-items: center;
+			justify-content: center;
+
+			& .auth_content-faceauth--status {
+				font-size: 24px;
+				font-weight: bold;
+				color: $theme-dark-color;
+			}
+
+			& .auth_content-faceauth--alive_detect {
+				margin-top: 40px;
+				width: 800px;
+				height: 300px;
+				background-color: wheat;
+			}
+		}
+	}
+</style>

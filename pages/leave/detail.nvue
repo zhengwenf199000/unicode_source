@@ -1,0 +1,264 @@
+<template>
+	<view class="content" @click="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c detail_content">
+			<breadcrumb title="请销假" actionTitle="外出详情"></breadcrumb>
+			<detail-table :detailMapper="detailMapper" :detailData="activity"></detail-table>
+			<view class="detail_content-backbtns">
+				<button v-if="isDestroy" class="detail_content-backbtn" type="primary" @click="reasonInputShow">销假</button>
+				<view v-else></view>
+				<button class="detail_content-backbtn" type="primary" @click="backClick">返回</button>
+			</view>
+		</view>
+
+		<uni-popup ref="popup">
+			<uni-popup-dialog title="提示" content="是否确定销假？" @confirm="destroyClick"></uni-popup-dialog>
+			<!-- <view class="reason_input_area">
+				<view class="reason_input_area-title">
+					<text class="reason_input_area-title--text">销假理由</text>
+				</view>
+				<view class="reason_input_area-forms">
+					<forms-item label="销假方式：">
+						<uni-easyinput v-model="destroyWay" placeholder="请输入销假方式"></uni-easyinput>
+					</forms-item>
+					<forms-item label="销假理由：">
+						<uni-easyinput v-model="destroyReason" type="textarea" placeholder="请输入销假理由"></uni-easyinput>
+					</forms-item>					
+				</view>
+				<view class="reason_input_area-actions">
+					<button class="reason_input_area-actions-cancel" type="primary" size="mini" @click="reasonInputDismiss">取消</button>
+					<button class="reason_input_area-actions-sure" type="primary" size="mini"
+						@click="destroyClick">确认</button>
+				</view>
+			</view> -->
+		</uni-popup>
+	</view>
+</template>
+
+<script>
+	import {
+		leaveDetailMapper
+	} from '@/utils/tableMappers'
+	import moment from 'moment'
+	import {
+		requestApi,
+		apis,
+		SIGN_IN_TYPE_MAPPER
+	} from '@/utils/http'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				leaveId: '',
+				status: '',
+				isDestroy: false,
+				destroyReason: '',
+				destroyWay: '',
+				detailMapper: leaveDetailMapper,
+				activity: {}
+				// activity: {
+				// 	"deptName": "社区矫正平台",
+				// 	"approve": [{
+				// 			"approveOpinion": "同意ceshi20170315的外出请假审请", //审批意见
+				// 			"approveDate": "2021-08-13 17:43:51", //审批时间
+				// 			"approvePerson": "系统管理员", //审批人员
+				// 			"approveName": "司法所管理岗审批" //审批人员角色
+				// 		},
+				// 		{
+				// 			"approveOpinion": "同意ceshi20170315的外出请假审请",
+				// 			"approveDate": "2021-08-13 17:44:00",
+				// 			"approvePerson": "系统管理员",
+				// 			"approveName": "县市区司法局工作岗审批"
+				// 		},
+				// 		{
+				// 			"approveOpinion": "同意ceshi20170315的外出请假审请",
+				// 			"approveDate": "2021-08-13 17:44:08",
+				// 			"approvePerson": "系统管理员",
+				// 			"approveName": "县市区司法局管理岗审批"
+				// 		},
+				// 		{
+				// 			"approveOpinion": "同意ceshi20170315的外出请假审请",
+				// 			"approveDate": "2021-08-13 17:44:15",
+				// 			"approvePerson": "系统管理员",
+				// 			"approveName": "县市区司法局分管局长审批"
+				// 		},
+				// 		{
+				// 			"approveOpinion": "同意ceshi20170315的外出请假审请",
+				// 			"approveDate": "2021-08-13 17:44:23",
+				// 			"approvePerson": "系统管理员",
+				// 			"approveName": "司法所工作岗办结"
+				// 		}
+				// 	],
+				// 	"starTime": "2021-08-10", //请假开始时间
+				// 	"area": "新抚区", //外出区
+				// 	"outAddressDetail": "辽宁", //外出目的地明细
+				// 	"criminalName": "ceshi20170315", //矫正对象姓名
+				// 	"reason": "出去看病", //请假原因
+				// 	"province": "辽宁省", //外出省份
+				// 	"applyTime": "2021-08-13", //申请时间
+				// 	"outAddressStreet": "新抚区", //外出目的地（乡镇、街道）
+				// 	"endTime": "2021-09-10", //请假结束时间
+				// 	"city": "抚顺市" //外出市
+				// }
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			}
+		},
+		onLoad(options) {
+			this.leaveId = options.leaveId || options.id
+			this.status = options.status
+			this.isDestroy = options.destroy
+			this.getLeaveDetail()
+		},
+		methods: {
+			getLeaveDetail() {
+				uni.showLoading()
+				requestApi(apis.getLeaveDetail, {
+					leaveId: this.leaveId
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.activity = { status: this.status, ...data }
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			backClick() {
+				uni.navigateBack()
+			},
+			reasonInputShow() {
+				this.$refs.popup.open();
+			},
+			reasonInputDismiss() {
+				this.$refs.popup.close();
+			},
+			destroyClick() {
+				// const {
+				// 	destroyWay,
+				// 	destroyReason
+				// } = this
+				// if (!destroyWay) {
+				// 	uni.showToast({
+				// 		title: '请输入销假方式',
+				// 		icon: 'none'
+				// 	})
+				// 	return
+				// }
+				// if (!destroyReason) {
+				// 	uni.showToast({
+				// 		title: '请输入销假理由',
+				// 		icon: 'none'
+				// 	})
+				// 	return
+				// }
+				uni.showLoading({
+					title: '正在销假...'
+				})
+				requestApi(apis.leaveBack, {
+					leaveId: this.leaveId
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.$refs.popup.close()
+					uni.showToast({
+						title: '销假成功！',
+					})
+					uni.$u.sleep(1000).then(() => {
+						uni.navigateBack()
+					})
+				}).catch(err => {
+					uni.hideLoading()
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.reason_input_area {
+		width: 600px;
+		padding-top: 10px;
+		padding-bottom: 20px;
+		background-color: #fff;
+		
+		.reason_input_area-title {
+			padding-left: 20px;
+			padding-bottom: 10px;
+			margin-bottom: 20px;
+			justify-content: center;
+			border-bottom: #ddd 1px solid;
+			
+			.reason_input_area-title--text {
+				color: #666;
+				font-size: 15px;
+			}
+		}
+		
+		.reason_input_area-forms {
+			margin-right: 30px;
+		}
+		
+		.reason_input_area-actions {
+			margin-right: 20px;
+			flex-direction: row;
+			justify-content: flex-end;
+			
+			.reason_input_area-actions-cancel {
+				background-color: #ddd;
+				width: 80px;
+				margin-right: 10px;
+				border: none;
+			}
+			
+			.reason_input_area-actions-sure {
+				background-color: $theme-dark-color;
+				width: 80px;
+			}
+		}
+		
+		
+	}
+
+	.detail_content {
+
+
+		& .detail_content-backbtns {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			margin: 10px 0;
+
+			& .detail_content-backbtn {
+				width: 100px;
+				background-color: $theme-dark-color;
+			}
+
+			& .detail_content-placeholder {
+				width: 100px;
+			}
+		}
+	}
+</style>

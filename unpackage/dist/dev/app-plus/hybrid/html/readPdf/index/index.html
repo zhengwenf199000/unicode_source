@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta charset="UTF-8">
+		<title>文件签名</title>
+		<link href="../jquery.touchPDF.css" rel="stylesheet" media="screen" />
+		<link href="./index.css" rel="stylesheet" media="screen" />
+	</head>
+	<body>
+		<div id="myPDF" class="myPDF-box-css"></div>
+		<div class="father-box" id="father-box">
+			<div id='drag-drop-box' class="drag-drop-box-css">
+				<div class="box" id="my-signImg">
+					<span class="br" id="signImg-br" style="touch-action: none"></span>
+					<img src="" id="signUrl" class="my-img">
+				</div>
+			</div>
+		</div>
+		<!-- <div class="tips">
+			请将签名拖拽到文件对应位置
+		</div> -->
+		<div class="my-btn-box">
+			<div class="my-btn-content">
+				<!-- <div class="my-btn-item my-sure" onclick="onReviewSign()">重新签名</div> -->
+				<div class="my-btn-item my-sure" onclick="onSubmit()">保存</div>
+			</div>
+		</div>
+		<!-- <canvas id="canvas" width="110" height="28" style="position: absolute;left: -120px;"></canvas> -->
+
+		<script type="text/javascript" src="../pdf.compatibility.js"></script>
+		<script type="text/javascript" src="../pdf.js"></script>
+		<script type="text/javascript" src="../jquery.min.js"></script>
+		<script type="text/javascript" src="../jquery.touchSwipe.js"></script>
+		<script type="text/javascript" src="../jquery.touchPDF.js"></script>
+		<script type="text/javascript" src="../jquery.panzoom.js"></script>
+		<script type="text/javascript" src="../jquery.mousewheel.js"></script>
+		<script type="text/javascript" src="https://js.cdn.aliyun.dcloud.net.cn/dev/uni-app/uni.webview.1.5.2.js">
+		</script>
+		<script type="text/javascript">
+			var timediv = document.createElement("div");
+			timediv.className = 'box';
+			timediv.id = 'my-timeImg';
+			var timespan = document.createElement("span");
+			timespan.className = 'br';
+			timespan.id = 'timeImg-br';
+			timespan.style = 'touch-action: none';
+			timediv.appendChild(timespan);
+			var img = document.createElement("img");
+			let fingerUrl = decodeURIComponent(getUrlParam('fingerUrl'))
+			img.src = fingerUrl;
+			
+			img.className = "my-img";
+			timediv.appendChild(img);
+			var oFatherBox = document.getElementById('drag-drop-box');
+			oFatherBox.appendChild(timediv);
+
+			// 获取传入的URL
+			function getUrlParam(name) {
+				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); // 构造一个含有目标参数的正则表达式对象
+				var r = window.location.search.substr(1).match(reg); // 匹配目标参数
+				if (r != null) return r[2];
+				return null; // 返回参数值
+			};
+			// 确定
+			function onSubmit() {
+				let oSignImg = document.getElementById('my-signImg');
+				var oTimeImg = document.getElementById('my-timeImg');
+				var page = localStorage.getItem("myPageNum");
+				page = parseInt(page);
+				var oPDFBOX = document.getElementById('myPDF');
+				let oPdfbox = document.getElementById('my-pdf-outerdiv');
+				let pdfinitHeight = oPdfbox.clientHeight;
+				let pdfinitScale = oPdfbox.style.transform.split('(')[1].split(')')[0].split(',');
+				let pdf_height = pdfinitHeight * pdfinitScale;
+				console.log(pdfinitScale,222)
+				
+				uni.postMessage({
+					data: {
+						signDatas: {
+							page_no: page,
+							image_id: oPDFBOX,
+							pdf_height: pdf_height,
+							pdf_width: document.documentElement.clientWidth,
+							width: oSignImg.offsetWidth,
+							height: oSignImg.offsetHeight,
+							top: oSignImg.offsetTop,
+							left: oSignImg.offsetLeft,
+						},
+						fingerDatas: {
+							page_no: page,
+							image_id: oTimeImg,
+							pdf_height: pdf_height,
+							pdf_width: document.documentElement.clientWidth,
+							width: oTimeImg.offsetWidth,
+							height: oTimeImg.offsetHeight,
+							top: oTimeImg.offsetTop,
+							left: oTimeImg.offsetLeft,
+						}
+					}
+				});
+			}
+			function onReviewSign(){
+				uni.postMessage({
+					data: {
+						type:'reSign'
+					}
+				});
+			}
+			// 初始化pdf等
+			$(function() {
+				let url = decodeURIComponent(getUrlParam('url'));
+				let signImgUrl = decodeURIComponent(getUrlParam('signImgUrl'))
+				document.getElementById('signUrl').src =  signImgUrl;
+
+				let name = getUrlParam('tname');
+				document.title = decodeURIComponent(name);
+				let myHeight = 720;
+				document.getElementById('myPDF').style.height = myHeight + 'px';
+				$("#myPDF").pdf({
+					source: url,
+					title: '',
+				});
+				let oPdfbox = document.getElementById('my-pdf-outerdiv');
+				let pdfinitHeight = oPdfbox.clientHeight;
+				let pdfinitScale = oPdfbox.style.transform.split('(')[1].split(')')[0].split(',');
+				let h = pdfinitHeight * pdfinitScale;
+				let w = oPdfbox.clientWidth;
+				document.getElementById('father-box').style.height = h + 'px';
+			});
+			window.onload = function() {
+				var oSignImg = document.getElementById('my-signImg');
+				var oTimeImg = document.getElementById('my-timeImg');
+				var oFatherBox = document.getElementById('drag-drop-box');
+				var oSignBr = document.getElementById('signImg-br');
+				var oTimeBr = document.getElementById('timeImg-br');
+				let oPdfbox = document.getElementById('my-pdf-outerdiv');
+				let pdfinitScale = oPdfbox.style.transform.split('(')[1].split(')')[0].split(',');
+				oSignImg.style.width = '100px';
+				oTimeImg.style.width =  '100px';
+				initListener('father', oSignImg);
+				initListener('father', oTimeImg);
+				initListener('bottomRight', oSignBr, oSignImg);
+				initListener('bottomRight', oTimeBr, oTimeImg);
+
+				function initListener(type, eDom, faterDom) {
+					eDom.addEventListener('touchstart', function(e) {
+						var ev = e || window.event;
+						var touch = ev.targetTouches[0];
+						ev.stopPropagation();
+						oL = touch.clientX - eDom.offsetLeft; // 触摸点距离box盒子左边框距离
+						oT = touch.clientY - eDom.offsetTop; // 触摸点距离box盒子上边框距离
+						document.addEventListener("touchmove", defaultEvent);
+					})
+					eDom.addEventListener('touchmove', function(e) {
+						var ev = e || window.event;
+						ev.stopPropagation();
+						var touch = ev.targetTouches[0];
+						if (type === 'father') {
+							eDom.style.left = touch.clientX - oL + 'px';
+							eDom.style.top = touch.clientY - oT + 'px';
+							InitBoundary(eDom);
+						} else if (type === 'bottomRight') {
+							faterDom.style.width = touch.clientX - oL + 'px';
+							faterDom.style.height = touch.clientY - oT + 'px';
+							InitBoundary(faterDom);
+						}
+					})
+					eDom.addEventListener('touchend', function() {
+						document.removeEventListener("touchmove", defaultEvent);
+					})
+				}
+				// 边界判断事件
+				function InitBoundary(eDom) {
+					let oDivWidth = eDom.offsetWidth;
+					let oDivHeight = eDom.offsetHeight;
+					let oDivLeft = eDom.offsetLeft;
+					let oDivTop = eDom.offsetTop;
+					let bodyWidth = oFatherBox.offsetWidth;
+					let bodyHeight = oFatherBox.offsetHeight;
+					// 左边界 
+					if (oDivLeft <= 0) {
+						eDom.style.left = 0 + 'px'
+					}
+					// 右边界 多减5个像素减去的是防止滚动条会造成抖动
+					if ((oDivLeft + oDivWidth) >= (bodyWidth - 24)) {
+						eDom.style.left = bodyWidth - oDivWidth - 24 + 'px'
+					}
+					//上边界
+					if (oDivTop <= 0) {
+						eDom.style.top = 0 + 'px'
+					}
+					// 下边界 多减5个像素减去的是防止滚动条会造成抖动
+					if (oDivTop + oDivHeight >= bodyHeight - 24) {
+						eDom.style.top = bodyHeight - oDivHeight - 24 + 'px'
+					}
+				}
+
+				function defaultEvent(e) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			};
+		</script>
+
+	</body>
+</html>

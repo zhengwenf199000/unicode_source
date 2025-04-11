@@ -1,0 +1,8 @@
+{
+	"apkVersion": "1.0",
+	"apkPackageName": "app1_0.apk",
+	"wgtVersion": "1.0.6",
+	"wgtPackageName": "wgt1_0_6.wgt",
+	"updateInfo": "1、文书录入字段调整\n2、优化整体稳定性",
+	"forceUpdate": false
+}

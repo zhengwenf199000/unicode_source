@@ -1,0 +1,127 @@
+<template>
+	<view class="content study_content">
+		<content-bg></content-bg>
+		
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c">
+			<text class="study_content-title">自助学习</text>
+			<text class="study_content-type">请选择业务类型</text>
+			<view class="study_content-funcsc">
+				<view class="study_content-funcs">
+					<image class="study_content-funcs-f" :class="{ 'study_content-funcs-first': i === 0 }" v-for="(func, i) in funcItems" :src="func.icon" mode="heightFix" @click="funcItemClick(func)"></image>
+					<!-- <image class="study_content-funcs-f" src="@/static/study/PhysicalSignCollection.png" mode="heightFix"></image> -->
+				</view>				
+			</view>
+			
+			<button type="primary" class="study_content-logout" @click="exitClick">退出</button>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				funcItems: [
+					{
+						path: '',
+						icon: '../../static/study/VideoLearning.png'
+					},
+					{
+						path: '',
+						icon: '../../static/study/OnlineCheck-in.png'
+					}
+				]
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+		},
+		methods: {
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			funcItemClick(func) {
+				if (!func.path) {
+					uni.showToast({
+						title: '系统升级中...',
+						icon: 'none'
+					})
+					return
+				}
+				if (!this.idnum) {
+					uni.showToast({
+						title: '未获取到您的身份信息',
+						icon: 'none'
+					})
+					return
+				}
+				uni.navigateTo({
+					url: func.path + '?idnum=' + this.idnum,
+					animationType: 'none'
+				})
+			},
+			exitClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.study_content {
+		
+		.study_content-title {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+		
+		.study_content-type {
+			color: $theme-dark-color;
+			font-size: 26px;
+			font-weight: bold;
+			text-align: center;
+			margin-top: 10px;
+		}
+		
+		.study_content-funcsc {
+			flex: 1;
+			justify-content: center;
+		}
+		
+		.study_content-funcs {
+			flex-direction: row;
+			justify-content: center;
+			height: 160px;
+			
+			.study_content-funcs-f {
+				/* #ifndef APP-NVUE */
+				height: 100%;
+				/* #endif */
+				margin-left: 30px;
+			}
+			
+			.study_content-funcs-first {
+				margin-left: 0;
+			}
+			
+			.study_content-funcs-p {
+				width: 30px;
+			}
+		}
+		
+		.study_content-logout {
+			align-self: flex-end;
+			background-color: $theme-dark-color;
+			margin-bottom: 15px;
+			color: #fff;
+			width: 100px;
+		}
+	}
+</style>

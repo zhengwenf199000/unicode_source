@@ -1,0 +1,162 @@
+<template>
+	<view class="content" @click="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c detail_content">
+			<breadcrumb title="信息查询" actionTitle="个人档案"></breadcrumb>
+			<detail-table :detailMapper="detailMapper" :detailData="activity.criminalInfo"></detail-table>
+			<view class="detail_content-backbtns">
+				<button class="detail_content-backbtn" type="primary" @click="backClick">返回</button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		fileDetailMapper
+	} from '@/utils/tableMappers'
+	import moment from 'moment'
+	import {
+		requestApi,
+		apis,
+		SIGN_IN_TYPE_MAPPER
+	} from '@/utils/http'
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				destroyReason: '',
+				destroyWay: '',
+				detailMapper: fileDetailMapper,
+				activity: {
+					criminalInfo: {
+						name: '', // 姓名
+						id_num: '', // 身份证号
+						phone_no: '', // 手机号
+						edu_bg: '', // 教育程度
+						affiance: '', // 婚姻状况
+						outside_limit: '', // 矫正期限
+						health: '', // 健康状况
+						dept_id: '', // 矫正单位
+						rybh: '', // 人员编号 x
+						jgjb: '', // 监管级别 x
+						outside_start: '', // 矫正开始
+						outside_end: '', // 矫正结束
+						update_date: '', // 录入时间
+					}
+				}
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			}
+		},
+		onLoad(options) {
+			this.idnum = options.idnum
+			this.getFileDetail()
+		},
+		methods: {
+			getFileDetail() {
+				uni.showLoading()
+				requestApi(apis.personInfo, {
+					id_num: this.idnum
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.activity = data
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			backClick() {
+				uni.navigateBack()
+			},
+			reasonInputShow() {
+				this.$refs.popup.open();
+			},
+			reasonInputDismiss() {
+				this.$refs.popup.close();
+			},
+			destroyClick() {
+				const {
+					destroyWay,
+					destroyReason
+				} = this
+				if (!destroyWay) {
+					uni.showToast({
+						title: '请输入销假方式',
+						icon: 'none'
+					})
+					return
+				}
+				if (!destroyReason) {
+					uni.showToast({
+						title: '请输入销假理由',
+						icon: 'none'
+					})
+					return
+				}
+				uni.showLoading({
+					title: '正在销假...'
+				})
+				requestApi(apis.signIn, {
+					leaveId: this.leaveId
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.$refs.popup.close()
+					uni.showToast({
+						title: '销假成功！',
+						icon: 'none'
+					})
+				}).catch(err => {
+					uni.hideLoading()
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+
+	.detail_content {
+
+
+		& .detail_content-backbtns {
+			display: flex;
+			flex-direction: row;
+			justify-content: flex-end;
+			margin: 10px;
+
+			& .detail_content-backbtn {
+				width: 100px;
+				background-color: $theme-dark-color;
+			}
+
+			& .detail_content-placeholder {
+				width: 120px;
+			}
+		}
+	}
+</style>

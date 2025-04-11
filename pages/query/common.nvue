@@ -1,0 +1,122 @@
+<template>
+	<view class="content" @click="capture" @touchmove="capture">
+		<content-bg></content-bg>
+
+		<view class="content-nav">
+			<image class="content-nav-home" src="@/static/imgs/Home.png" mode="widthFix" @click="homeClick"></image>
+		</view>
+		<view class="content-c query-common_content">
+			<breadcrumb title="信息查询" :actionTitle="title"></breadcrumb>
+			<action-table v-if="activitys.length > 0" :tableMapper="tableMapper" :tableData="activitys"
+				@viewBtnClick="viewBtnClick"></action-table>
+			<empty-view v-else :text="`暂无${ title }`" :action="false" @applyClick="applyClick"></empty-view>		
+			<button class="query-common_content-backbtn" type="primary" @click="backClick">返回</button>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		requestApi,
+		apis
+	} from '@/utils/http'
+	import {
+		queryTypeMapper
+	} from './config';
+	import userInactiveMixin from '@/mixins/userInactiveMixin';
+	
+	export default {
+		mixins: [ userInactiveMixin ],
+		data() {
+			return {
+				type: '',
+				title: '',
+				tableMapper: [],
+				detailMapper: [],
+				api: '',
+				detailPage: '',
+				idnum: '',
+				name: '',
+				activitys: [],
+			}
+		},
+		computed: {
+			token() {
+				return this.$store.getters.token
+			}
+		},
+		watch: {
+			type(nT) {
+				const data = queryTypeMapper[nT];
+				this.title = data.title;
+				this.tableMapper = data.table;
+				this.detailMapper = data.detail;
+				this.api = data.api;
+				this.detailPage = data.detailPage || '/pages/compound/detail'
+				this.getActivitys();
+			}
+		},
+		onLoad(options) {
+			const {
+				idnum,
+				name,
+				type
+			} = options
+			this.idnum = idnum
+			this.name = name
+			this.type = type
+		},
+		methods: {
+			getActivitys() {
+				uni.showLoading()
+				console.log('请求数据：', this.api);
+				requestApi(this.api, {
+					id_num: this.idnum
+				}, {
+					token: this.token
+				}).then(data => {
+					uni.hideLoading()
+					this.activitys = data
+				}).catch(err => {
+					uni.showToast({
+						title: err,
+						icon: 'none'
+					})
+				})
+			},
+			viewBtnClick(index) {
+				const act = this.activitys[index]
+				console.log(act);
+				this.$store.commit('setDetailData', {
+					name: this.title,
+					data: act,
+					detailMapper: this.detailMapper
+				})
+				uni.navigateTo({
+					url: this.detailPage + '?idnum=' + this.idnum + '&name=' + this.name + '&id=' + act.id + '&status=' + act.processInfo,
+					animationType: 'none'
+				})
+			},
+			homeClick() {
+				uni.reLaunch({
+					url: '/pages/home/home'
+				})
+			},
+			backClick() {
+				uni.navigateBack()
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.query-common_content {
+
+		& .query-common_content-backbtn {
+			align-self: flex-end;
+			width: 100px;
+			background-color: $theme-dark-color;
+			margin: 10px 0;
+		}
+	}
+</style>

@@ -1,0 +1,111 @@
+<template>
+	<view style="display: flex; align-items: center;">
+		<text v-if="detecting" style="color: #666; margin: 10px">正在检测中。。。</text>
+		<text v-if="isAlive" style="color: green;">确认是活体</text>
+		<text v-else style="color: red;">不是活体，持续检测中。。。</text>
+		<!-- <alive-detect style="width: 250px; height: 250px; margin-top: 20px; background-color: papayawhip;" cameratype="black" @detecting="detecting" @detectFailure="detectFailure" @detectSuccess="detectSuccess" @angleChange="angleChange"></alive-detect> -->
+		<alive-detect class="alive_detect" cameratype="black" @recognizing="recognizing" @detecting="detectingFunc" @detectFailure="detectFailure" @detectSuccess="detectSuccessFunc" @angleChange="angleChange"></alive-detect>
+		
+		<text style="color: #333; margin: 20px; font-weight: bolder;">角度：仰角{{ pitchAngle }} 左右角度{{ yawAngle }} 摆动角度{{ rollAngle }}</text>
+		<!-- <button type="primary" @click="testAsyncFunc">testAsyncFunc</button>
+		<button type="primary" @click="testSyncFunc">testSyncFunc</button>
+		<button type="primary" @click="gotoNativePage">跳转原生Activity</button> -->
+	</view>
+</template>
+
+<script>
+	// 获取 module 
+	var testModule = uni.requireNativePlugin("TestModule")
+	const modal = uni.requireNativePlugin('modal');
+	export default {
+		data() {
+			return {
+				detecting: false,
+				isAlive: false,
+				pitchAngle: 0,
+				yawAngle: 0,
+				rollAngle: 0
+			}
+		},
+		onLoad() {
+			plus.globalEvent.addEventListener('TestEvent', function(e){
+				modal.toast({
+					message: "TestEvent收到："+e.msg,
+					duration: 1.5
+				});
+			});
+		},
+		methods: {
+			detectSuccessFunc() {
+				uni.showToast({
+					title: '正在检测...'
+				})
+				console.log('detectSuccess');
+				this.detecting = false
+				this.isAlive = true
+				uni.hideLoading()
+			},
+			detectFailure(e) {
+				console.log('detectFailure!', e);
+				this.detecting = false
+				this.isAlive = false
+				uni.hideLoading()
+			},
+			detectingFunc() {
+				this.detecting = true
+			},
+			recognizing() {
+				console.log('正在检测...');
+				uni.showLoading({
+					title: '正在检测...'
+				})
+			},
+			angleChange(e) {
+				const {
+					pitchAngle,
+					yawAngle,
+					rollAngle
+				} = e.detail
+				this.pitchAngle = pitchAngle
+				this.yawAngle = yawAngle
+				this.rollAngle = rollAngle
+			},
+			testAsyncFunc() {
+				// 调用异步方法
+				testModule.testAsyncFunc({
+						'name': 'unimp',
+						'age': 1
+					},
+					(ret) => {
+						modal.toast({
+							message: ret,
+							duration: 1.5
+						});
+					})
+			},
+			testSyncFunc() {
+				// 调用同步方法
+				var ret = testModule.testSyncFunc({
+					'name': 'unimp',
+					'age': 1
+				})
+				modal.toast({
+					message: ret,
+					duration: 1.5
+				});
+			},
+			gotoNativePage() {
+				testModule.gotoNativePage();
+			}
+		}
+	}
+</script>
+
+<style>
+	.alive_detect {
+		margin-top: 20px;
+		width: 750rpx;
+		height: 375rpx;
+		background-color: #ff6600;
+	}
+</style>

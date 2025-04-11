@@ -1,0 +1,103 @@
+<template>
+	<view class="idcardact-container">
+		<text v-if="loading" class="idcardact-status">读取中...</text>
+		<view v-if="idCardInfo" class="id_card_info_c">
+			<text>姓名：{{ idCardInfo.name }}</text>
+			<text>性别：{{ idCardInfo.sex }}</text>
+			<text>民族：{{ idCardInfo.nation }}</text>
+			<text>出生：{{ idCardInfo.birthTime }}</text>
+			<text>住址：{{ idCardInfo.address }}</text>
+			<text>身份证号：{{ idCardInfo.number }}</text>
+			<text>签发机关：{{ idCardInfo.issueOffice }}</text>
+			<text>有效期：{{ idCardInfo.effectiveStartDate }} - {{ idCardInfo.effectiveEndDate }}</text>
+			<image :src="idCardInfo.photoURI" class="id_card_info_c-photo"></image>
+		</view>
+		
+		<button class="idcardact-status" @click="getInfo">获取身份信息</button>
+		<uni-data-select v-model="skills" :localdata="skillsRange" >
+		</uni-data-select>
+		<text>{{ data }}</text>
+	</view>
+</template>
+
+<script>
+	const moduleIdCardAct = uni.requireNativePlugin('ModuleIDCardAct')
+	const moduleFaceCompare = uni.requireNativePlugin('ModuleFaceCompare')
+	export default {
+		data() {
+			return {
+				loading: true,
+				data: '身份证信息',
+				idCardInfo: null,
+				marriage: '01',
+				marriageRange: [
+					{ text: '未婚', value: '01' },
+					{ text: '已婚', value: '02' },
+					{ text: '离异', value: '03' },
+					{ text: '丧偶', value: '04' }
+				],
+				skillsRange: [{
+						value: 0,
+						text: "编程"
+					},
+					{
+						value: 1,
+						text: "绘画"
+					},
+					{
+						value: 2,
+						text: "运动"
+					},
+				],
+			}
+		},
+		onLoad() {
+			moduleFaceCompare.compareFeature()
+		},
+		onUnload() {
+			moduleIdCardAct.stop()
+		},
+		methods: {
+			change(e) {
+				console.log(e);
+			},
+			getInfo() {
+				moduleIdCardAct.start(idCardInfo => {
+					if (idCardInfo) {
+						this.loading = false
+						this.idCardInfo = idCardInfo
+					}
+					this.data = JSON.stringify(idCardInfo)
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.idcardact-container {
+		flex-direction: column;
+		align-items: center;
+		// flex: 1;
+	}
+	
+	.idcardact-status {
+		margin: 20px;
+	}
+	
+	.id_card_info_c {
+		width: 750rpx;
+		padding: 10px;
+		align-items: flex-start;
+		
+	}
+	
+	.id_card_info_c-photo {
+		position: absolute;
+		right: 10px;
+		width: 100px;
+		height: 100px;
+		background-color: antiquewhite;
+	}
+	
+</style>

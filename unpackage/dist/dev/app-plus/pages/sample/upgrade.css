@@ -1,0 +1,120 @@
+
+body[data-v-21de84e1] {
+		background: transparent;
+}
+.flex-center[data-v-21de84e1] {
+
+		display: flex;
+
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+}
+.mask[data-v-21de84e1] {
+		position: fixed;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10;
+		background-color: rgba(0, 0, 0, .65);
+}
+.botton-radius[data-v-21de84e1] {
+		border-bottom-left-radius: 0.9375rem;
+		border-bottom-right-radius: 0.9375rem;
+}
+.upgrade-content[data-v-21de84e1] {
+		position: relative;
+		top: 0;
+		width: 400px;
+		background-color: #fff;
+		box-sizing: border-box;
+		padding: 0 20px;
+		font-family: Source Han Sans CN;
+}
+.text[data-v-21de84e1] {
+
+		display: block;
+
+		line-height: 200px;
+		text-align: center;
+		color: #FFFFFF;
+}
+.content-top[data-v-21de84e1] {
+		position: absolute;
+		top: -150px;
+		left: 0;
+		width: 100%;
+		/* height: 270rpx; */
+}
+.content-top-text[data-v-21de84e1] {
+		font-size: 20px;
+		font-weight: bold;
+		color: #F8F8FA;
+		position: absolute;
+		top: 60px;
+		left: 25px;
+		z-index: 1;
+}
+.content-header[data-v-21de84e1] {
+		height: 35px;
+}
+.title[data-v-21de84e1] {
+		font-size: 16px;
+		font-weight: bold;
+		color: #3DA7FF;
+		line-height: 38px;
+}
+.footer[data-v-21de84e1] {
+		height: 75px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-around;
+}
+.box-des-scroll[data-v-21de84e1] {
+		box-sizing: border-box;
+		/* padding: 0 20px; */
+		height: 100px;
+		text-align: left;
+}
+.box-des[data-v-21de84e1] {
+		font-size: 14px;
+		color: #000000;
+		line-height: 25px;
+}
+.progress-box[data-v-21de84e1] {
+		width: 100%;
+}
+.progress[data-v-21de84e1] {
+		width: 90%;
+		height: 20px;
+		border-radius: 35px;
+}
+.close-img[data-v-21de84e1] {
+		width: 35px;
+		height: 35px;
+		z-index: 1000;
+		position: absolute;
+		bottom: -60px;
+		left: calc(50% - 35px / 2);
+}
+.content-button[data-v-21de84e1] {
+		text-align: center;
+		flex: 1;
+		font-size: 15px;
+		font-weight: 400;
+		color: #FFFFFF;
+		border-radius: 20px;
+		margin: 0 10px;
+
+		height: 40px;
+		line-height: 40px;
+
+		background: linear-gradient(to right, #1785ff, #3DA7FF);
+}
+.flex-column[data-v-21de84e1] {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+}
