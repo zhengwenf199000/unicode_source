@@ -305,7 +305,7 @@
 			pageNum = number;
 			renderPage();
 			localStorage.setItem('myPageNum', pageNum)
-
+			changePageNum(totalPages,pageNum)
 			// update tabs
 			var z = 1;
 			$element.find(".pdf-tabs .tab").each(function(i, a) {
@@ -322,6 +322,8 @@
 					$a.css("z-index", 1000 - z++);
 				}
 			});
+
+
 		}
 
 		function initDom() {

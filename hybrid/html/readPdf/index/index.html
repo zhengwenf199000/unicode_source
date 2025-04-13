@@ -11,10 +11,16 @@
 		<div id="myPDF" class="myPDF-box-css"></div>
 		<div class="father-box" id="father-box">
 			<div id='drag-drop-box' class="drag-drop-box-css">
-				<div class="box" id="my-signImg">
-					<span class="br" id="signImg-br" style="touch-action: none"></span>
-					<img src="" id="signUrl" class="my-img">
+				<div class="drag-inner" >
+					<div class="box" id="my-signImg">'+'<span class="br" id="signImg-br" style="touch-action: none"></span>
+						<img src="" id="signUrl" class="my-img">
+					</div>
+					<div class="box" id="my-fingerImg">
+						<span class="br" id="fingerImg-br" style="touch-action: none"></span>
+						<img src="" id="fingerUrl" class="my-img">
+					</div>
 				</div>
+				
 			</div>
 		</div>
 		<!-- <div class="tips">
@@ -38,23 +44,34 @@
 		<script type="text/javascript" src="https://js.cdn.aliyun.dcloud.net.cn/dev/uni-app/uni.webview.1.5.2.js">
 		</script>
 		<script type="text/javascript">
-			var timediv = document.createElement("div");
-			timediv.className = 'box';
-			timediv.id = 'my-timeImg';
-			var timespan = document.createElement("span");
-			timespan.className = 'br';
-			timespan.id = 'timeImg-br';
-			timespan.style = 'touch-action: none';
-			timediv.appendChild(timespan);
-			var img = document.createElement("img");
-			let fingerUrl = decodeURIComponent(getUrlParam('fingerUrl'))
-			img.src = fingerUrl;
+			// var fingerDiv = document.createElement("div");
+			// fingerDiv.className = 'box';
+			// fingerDiv.id = 'my-fingerImg';
+			// var timespan = document.createElement("span");
+			// timespan.className = 'br';
+			// timespan.id = 'fingerImg-br';
+			// timespan.style = 'touch-action: none';
+			// fingerDiv.appendChild(timespan);
+			// var img = document.createElement("img");
+			// let fingerUrl = decodeURIComponent(getUrlParam('fingerUrl'))
+			// img.src = fingerUrl;
 			
-			img.className = "my-img";
-			timediv.appendChild(img);
-			var oFatherBox = document.getElementById('drag-drop-box');
-			oFatherBox.appendChild(timediv);
+			// img.className = "my-img";
+			// fingerDiv.appendChild(img);
+			// var oFatherBox = document.getElementById('drag-drop-box');
+			// oFatherBox.appendChild(fingerDiv);
+			function changePageNum(totalPages,pageNum){
+				console.log($('#drag-drop-box'),9999)
+				// $('#drag-drop-box').appendChild('<div class="drag-inner">'+
+				// 	'<div class="box" id="my-signImg">'+'<span class="br" id="signImg-br" style="touch-action: none"></span>'+
+				// 	'<img src="" id="signUrl" class="my-img">'+
+				// '</div>'+
 
+				// '<div class="box" id="my-fingerImg">'+
+				// 	'<span class="br" id="fingerImg-br" style="touch-action: none"></span>'+
+				// 	'<img src="" id="fingerUrl" class="my-img">'+
+				// '</div></div>')
+			}
 			// 获取传入的URL
 			function getUrlParam(name) {
 				var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); // 构造一个含有目标参数的正则表达式对象
@@ -65,7 +82,7 @@
 			// 确定
 			function onSubmit() {
 				let oSignImg = document.getElementById('my-signImg');
-				var oTimeImg = document.getElementById('my-timeImg');
+				var fingerImg = document.getElementById('my-fingerImg');
 				var page = localStorage.getItem("myPageNum");
 				page = parseInt(page);
 				var oPDFBOX = document.getElementById('myPDF');
@@ -73,7 +90,6 @@
 				let pdfinitHeight = oPdfbox.clientHeight;
 				let pdfinitScale = oPdfbox.style.transform.split('(')[1].split(')')[0].split(',');
 				let pdf_height = pdfinitHeight * pdfinitScale;
-				console.log(pdfinitScale,222)
 				
 				uni.postMessage({
 					data: {
@@ -89,13 +105,13 @@
 						},
 						fingerDatas: {
 							page_no: page,
-							image_id: oTimeImg,
+							image_id: fingerImg,
 							pdf_height: pdf_height,
 							pdf_width: document.documentElement.clientWidth,
-							width: oTimeImg.offsetWidth,
-							height: oTimeImg.offsetHeight,
-							top: oTimeImg.offsetTop,
-							left: oTimeImg.offsetLeft,
+							width: fingerImg.offsetWidth,
+							height: fingerImg.offsetHeight,
+							top: fingerImg.offsetTop,
+							left: fingerImg.offsetLeft,
 						}
 					}
 				});
@@ -111,8 +127,9 @@
 			$(function() {
 				let url = decodeURIComponent(getUrlParam('url'));
 				let signImgUrl = decodeURIComponent(getUrlParam('signImgUrl'))
+				let fingerImgUrl = decodeURIComponent(getUrlParam('fingerUrl'))
 				document.getElementById('signUrl').src =  signImgUrl;
-
+				document.getElementById('fingerUrl').src =  fingerImgUrl;
 				let name = getUrlParam('tname');
 				document.title = decodeURIComponent(name);
 				let myHeight = 720;
@@ -130,18 +147,18 @@
 			});
 			window.onload = function() {
 				var oSignImg = document.getElementById('my-signImg');
-				var oTimeImg = document.getElementById('my-timeImg');
+				var fingerImg = document.getElementById('my-fingerImg');
 				var oFatherBox = document.getElementById('drag-drop-box');
 				var oSignBr = document.getElementById('signImg-br');
-				var oTimeBr = document.getElementById('timeImg-br');
+				var oTimeBr = document.getElementById('fingerImg-br');
 				let oPdfbox = document.getElementById('my-pdf-outerdiv');
 				let pdfinitScale = oPdfbox.style.transform.split('(')[1].split(')')[0].split(',');
 				oSignImg.style.width = '100px';
-				oTimeImg.style.width =  '100px';
+				fingerImg.style.width =  '100px';
 				initListener('father', oSignImg);
-				initListener('father', oTimeImg);
+				initListener('father', fingerImg);
 				initListener('bottomRight', oSignBr, oSignImg);
-				initListener('bottomRight', oTimeBr, oTimeImg);
+				initListener('bottomRight', oTimeBr, fingerImg);
 
 				function initListener(type, eDom, faterDom) {
 					eDom.addEventListener('touchstart', function(e) {
